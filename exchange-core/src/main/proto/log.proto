@@ -1,0 +1,9 @@
+syntax = "proto3";
+package gc.garcol.exchange.proto;
+option java_outer_classname = "LogProto";
+
+import "command.proto";
+
+message LogEntry {
+  repeated Command commands = 1;
+}

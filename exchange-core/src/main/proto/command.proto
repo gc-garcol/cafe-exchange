@@ -1,0 +1,16 @@
+syntax = "proto3";
+package gc.garcol.exchange.proto;
+option java_outer_classname = "CommandProto";
+
+import "trade.command.proto";
+
+message Command {
+  oneof payload {
+    NewOrder newOrder = 1;
+    CancelOptionOrder cancelOptionOrder = 2;
+  }
+}
+
+message Commands {
+  repeated Command commands = 1;
+}
