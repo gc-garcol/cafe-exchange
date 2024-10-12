@@ -1,0 +1,85 @@
+syntax = "proto3";
+package gc.garcol.exchange.proto;
+option java_outer_classname = "TradeProto";
+
+import "enum.proto";
+import "common.proto";
+
+// https://developers.binance.com/docs/derivatives/option/trade/Query-Single-Order
+
+message QuerySingleOrder {
+  string symbol = 1;
+  int64 timestamp = 2;
+  int64 orderId = 3;
+  string clientOrderId = 4;
+  int64 recvWindow = 5;
+}
+
+message QuerySingleOrderResponse {
+  oneof response {
+    Order order = 1;
+    NoOrder noOrder = 2;
+  }
+}
+
+/*
+{
+    "orderId": 4611875134427365377,     // System order id
+    "symbol": "BTC-200730-9000-C",      // Option trading pair
+    "price": "100",                     // Order Price
+    "quantity": "1",                    // Order Quantity
+    "executedQty": "0",                 // Number of executed quantity
+    "fee": "0",                         // Fee
+    "side": "BUY",                      // Buy/sell direction
+    "type": "LIMIT",                    // Order type
+    "timeInForce": "GTC",               // Time in force method
+    "reduceOnly": false,                // Order is reduce only Y/N
+    "postOnly": false,                  // Order is post only
+    "createTime": 1592465880683,        // Order Time
+    "updateTime": 1566818724722,        // Update time
+    "status": "ACCEPTED",               // Order status
+    "avgPrice": "0",                    // Average price of completed trade
+    "source": "API",                    // Order source
+    "clientOrderId": ""                 // Client order ID
+    "priceScale": 2,
+    "quantityScale": 2,
+    "optionSide": "CALL",
+    "quoteAsset": "USDT",
+    "mmp": false
+}
+*/
+message Order {
+  int64 orderId = 1;
+  string symbol = 2;
+  BigDecimal price = 3;
+  BigDecimal quantity = 4;
+  string executedQty = 5;
+  string fee = 6;
+  OrderSide side = 7;
+  OrderType type = 8;
+  TimeInForce timeInForce = 9;
+  bool reduceOnly = 10;
+  bool postOnly = 11;
+  int64 createTime = 12;
+  int64 updateTime = 13;
+  OrderStatus status = 14;
+  BigDecimal avgPrice = 15;
+  string source = 16;
+  string clientOrderId = 17;
+  int32 priceScale = 18;
+  int32 quantityScale = 19;
+  OptionSide optionSide = 20;
+  string quoteAsset = 21;
+  bool mmp = 22;
+}
+
+/*
+{
+    "code": -2013,
+    "msg": "Order does not exist"
+}
+*/
+message NoOrder {
+  int32 code = 1;
+  string msg = 2;
+}

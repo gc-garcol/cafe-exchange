@@ -1,0 +1,13 @@
+syntax = "proto3";
+package gc.garcol.exchange.proto;
+option java_outer_classname = "CollectionProto";
+
+message UUID {
+  uint64 uuid_msb = 1; // Most Significant Bits
+  uint64 uuid_lsb = 2; // Least Significant Bits
+}
+
+message BigDecimal {
+  bytes value = 1;
+  int32 scale = 2;
+}

@@ -1,0 +1,38 @@
+syntax = "proto3";
+package gc.garcol.exchange.proto;
+option java_outer_classname = "EnumProto";
+
+// https://developers.binance.com/docs/derivatives/option/common-definition
+
+enum OrderSide {
+  BUY = 0;
+  SELL = 1;
+}
+
+enum OptionSide {
+  CALL = 0;
+  PUT = 1;
+}
+
+enum OrderType {
+  LIMIT = 0;
+}
+
+enum TimeInForce {
+  GTC = 0; // Good Till Cancel
+  IOC = 1; // Immediate Or Cancel
+  FOK = 2; // Fill Or Kill
+}
+
+enum ResponseType {// newOrderRespType
+  ACK = 0;
+  REJECT = 1;
+}
+
+enum OrderStatus {// status
+  NEW = 0;
+  PARTIALLY_FILLED = 1;
+  FILLED = 2;
+  CANCELED = 3;
+  REJECTED = 4;
+}
