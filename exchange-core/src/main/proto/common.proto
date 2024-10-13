@@ -1,6 +1,6 @@
 syntax = "proto3";
 package gc.garcol.exchange.proto;
-option java_outer_classname = "CollectionProto";
+option java_outer_classname = "CommonProto";
 
 message UUID {
   uint64 uuid_msb = 1; // Most Significant Bits

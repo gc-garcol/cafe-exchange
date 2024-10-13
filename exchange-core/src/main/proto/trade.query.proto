@@ -1,6 +1,6 @@
 syntax = "proto3";
 package gc.garcol.exchange.proto;
-option java_outer_classname = "TradeProto";
+option java_outer_classname = "TradeQueryProto";
 
 import "enum.proto";
 import "common.proto";

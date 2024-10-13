@@ -2,8 +2,6 @@ import com.google.protobuf.gradle.id
 
 plugins {
     java
-    id("org.springframework.boot") version "3.3.4"
-    id("io.spring.dependency-management") version "1.1.6"
     id("com.google.protobuf") version "0.9.4"
     idea // required for protobuf support in intellij
 }
@@ -27,7 +25,13 @@ repositories {
     mavenCentral()
 }
 
+var jmhVersion = "1.37"
+var disruptorVersion = "4.0.0"
+var annotationsApiVersion = "6.0.53"
+var grpcVersion = "1.64.0"
+var protocVersion = "4.27.1"
+var dotenvVersion = "3.0.2"
+
 dependencies {
     implementation(project(":exchange-core"))
-    implementation("org.springframework.boot:spring-boot-starter-web")
 }
