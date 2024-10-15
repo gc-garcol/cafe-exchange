@@ -7,5 +7,6 @@ package gc.garcol.exchangecore;
 public interface ExchangeClusterState
 {
     void start();
+
     void stop();
 }

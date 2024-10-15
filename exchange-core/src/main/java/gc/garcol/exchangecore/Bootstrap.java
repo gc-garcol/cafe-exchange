@@ -7,5 +7,6 @@ package gc.garcol.exchangecore;
 public interface Bootstrap
 {
     void start();
+
     void stop();
 }

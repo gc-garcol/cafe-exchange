@@ -14,8 +14,9 @@ public interface ExchangeIOC
     {
         @Override
         @SuppressWarnings("unchecked")
-        public <T> T getInstance(Class<T> clazz) {
-            return (T) new Object();
+        public <T> T getInstance(Class<T> clazz)
+        {
+            return (T)new Object();
         }
     }
 }
