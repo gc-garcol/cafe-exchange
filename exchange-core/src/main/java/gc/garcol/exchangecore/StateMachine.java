@@ -9,8 +9,4 @@ import gc.garcol.exchange.proto.CommandProto;
 public interface StateMachine
 {
     void apply(CommandProto.Command command);
-
-    void loadSnapshot();
-
-    void snapshot();
 }
