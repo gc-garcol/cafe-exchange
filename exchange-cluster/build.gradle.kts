@@ -37,3 +37,15 @@ dependencies {
 
     implementation("redis.clients:jedis:${jedisVersion}")
 }
+
+tasks {
+    task("run-cluster", JavaExec::class) {
+        group = "run"
+        classpath = sourceSets.main.get().runtimeClasspath
+        mainClass.set("gc.garcol.exchangecluster.ExchangeClusterApplication")
+
+        // Get the port from command-line arguments or use a default value
+        val port = project.properties["port"]?.toString() ?: "8080"
+        args = listOf("--server.port=$port")
+    }
+}

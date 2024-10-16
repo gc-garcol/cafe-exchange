@@ -20,7 +20,7 @@ public class ExchangeClusterStateFollower implements ExchangeClusterState
     {
         this.cluster = cluster;
         var replayLogAgent = new AgentReplayLog();
-        var heartBeatAgent = new AgentHeartBeat("Try to acquire leader role");
+        var heartBeatAgent = new AgentHeartBeat("Try to acquire leader role " + ClusterGlobal.NODE_ID);
 
         this.replayLogRunner = new AgentRunner(
             new SleepingMillisIdleStrategy(),

@@ -21,7 +21,7 @@ public class ExchangeClusterStateLeader implements ExchangeClusterState
     {
         this.cluster = cluster;
 
-        var heartBeatAgent = new AgentHeartBeat("Try to keep leader role");
+        var heartBeatAgent = new AgentHeartBeat("Try to keep leader role " + ClusterGlobal.NODE_ID);
         var journalerAgent = new AgentJournaler();
 
         this.heartBeatRunner = new AgentRunner(
