@@ -12,8 +12,6 @@ import redis.clients.jedis.Jedis;
 @RequiredArgsConstructor
 public class RedisService
 {
-    private final Jedis jedis;
-
     private final static String LEADER_ELECTION = """
         local currentLeader = redis.call('GET', KEYS[1])
         if currentLeader == ARGV[1] then
@@ -29,6 +27,7 @@ public class RedisService
                 return -1  -- Optionally return -1 if SET failed (key already exists)
             end
         end""";
+    private final Jedis jedis;
 
     public boolean acquireLeaderRole()
     {

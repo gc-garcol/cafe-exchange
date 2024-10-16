@@ -16,16 +16,13 @@ import java.nio.ByteBuffer;
 @Slf4j
 public class ExchangeCluster implements Agent
 {
-    ExchangeClusterState state;
-
-    OneToOneRingBuffer commandsInboundRingBuffer;
-    OneToOneRingBuffer commandsOutboundRingBuffer;
-
-    OneToOneRingBuffer heartBeatInboundRingBuffer;
-    OneToOneRingBuffer relayLogInboundRingBuffer;
-
     final RingBufferOneToOneHandler heartBeatFollowerHandler;
     final RingBufferOneToOneHandler heartBeatLeaderHandler;
+    ExchangeClusterState state;
+    OneToOneRingBuffer commandsInboundRingBuffer;
+    OneToOneRingBuffer commandsOutboundRingBuffer;
+    OneToOneRingBuffer heartBeatInboundRingBuffer;
+    OneToOneRingBuffer relayLogInboundRingBuffer;
 
     public ExchangeCluster(
         RingBufferOneToOneHandler heartBeatFollowerHandler,
@@ -108,8 +105,10 @@ public class ExchangeCluster implements Agent
         state.start();
     }
 
-    public void stopAll() {
-        if (state != null) {
+    public void stopAll()
+    {
+        if (state != null)
+        {
             state.stop();
         }
     }

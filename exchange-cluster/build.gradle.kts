@@ -1,5 +1,3 @@
-import com.google.protobuf.gradle.id
-
 plugins {
     java
     id("org.springframework.boot") version "3.3.4"

@@ -2,14 +2,12 @@ package gc.garcol.exchangecluster;
 
 import gc.garcol.exchangecore.BootstrapCluster;
 import gc.garcol.exchangecore.ExchangeCluster;
-import gc.garcol.exchangecore.ExchangeClusterState;
 import jakarta.annotation.PreDestroy;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
-import org.springframework.context.ApplicationEvent;
 import org.springframework.context.event.EventListener;
 
 @Slf4j
@@ -27,13 +25,15 @@ public class ExchangeClusterApplication
     }
 
     @EventListener(ApplicationReadyEvent.class)
-    public void bootstrap() {
+    public void bootstrap()
+    {
         log.info("Application is ready to start.");
         bootstrapCluster.start();
     }
 
     @PreDestroy
-    public void destroy() {
+    public void destroy()
+    {
         log.info("Application is going to stop.");
         bootstrapCluster.stop();
     }
