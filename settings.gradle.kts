@@ -1,5 +1,5 @@
 rootProject.name = "cafe-exchange"
 
-include("exchange-core")
-include("exchange-cluster")
+include("exchange-core", "exchange-cluster")
+include("exchange-client")
 include("benchmark-exchange")
