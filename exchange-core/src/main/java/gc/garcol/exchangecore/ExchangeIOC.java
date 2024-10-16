@@ -4,19 +4,9 @@ package gc.garcol.exchangecore;
  * @author thaivc
  * @since 2024
  */
-public interface ExchangeIOC
+public abstract class ExchangeIOC
 {
-    ExchangeIOC SINGLETON = new BlankIOC();
+    public static ExchangeIOC SINGLETON;
 
-    <T> T getInstance(Class<T> clazz);
-
-    class BlankIOC implements ExchangeIOC
-    {
-        @Override
-        @SuppressWarnings("unchecked")
-        public <T> T getInstance(Class<T> clazz)
-        {
-            return (T)new Object();
-        }
-    }
+    protected abstract <T> T getInstance(Class<T> clazz);
 }

@@ -52,9 +52,7 @@ dependencies {
 
     implementation("org.rocksdb:rocksdbjni:${rockdbVersion}")
     implementation("redis.clients:jedis:${jedisVersion}")
-
 }
-
 
 sourceSets {
     main {

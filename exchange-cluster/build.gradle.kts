@@ -27,7 +27,15 @@ repositories {
     mavenCentral()
 }
 
+var lombokVersion = "1.18.34"
+var jedisVersion = "5.2.0"
+
 dependencies {
     implementation(project(":exchange-core"))
     implementation("org.springframework.boot:spring-boot-starter-web")
+
+    compileOnly("org.projectlombok:lombok:${lombokVersion}")
+    annotationProcessor("org.projectlombok:lombok:${lombokVersion}")
+
+    implementation("redis.clients:jedis:${jedisVersion}")
 }

@@ -18,6 +18,8 @@ public class Env
     public static final String SNAPSHOT_METADATA_FILE = dotenv.get("SNAPSHOT_METADATA_FILE");
 
     public static final long HEARTBEAT_INTERVAL_MS = Long.parseLong(dotenv.get("HEARTBEAT_INTERVAL_MS"));
+    public static final String LEADER_KEY = dotenv.get("LEADER_KEY");
+    public static final long LEADER_TTL_MS = Long.parseLong(dotenv.get("LEADER_TTL_MS"));
 
     public static final int BUFFER_SIZE_COMMAND_INBOUND_POW = Integer.parseInt(dotenv.get("BUFFER_SIZE_COMMAND_INBOUND_POW"));
     public static final int BUFFER_SIZE_COMMAND_OUTBOUND_POW = Integer.parseInt(dotenv.get("BUFFER_SIZE_COMMAND_OUTBOUND_POW"));
