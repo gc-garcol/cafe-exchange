@@ -16,18 +16,13 @@ import java.nio.ByteBuffer;
 @Slf4j
 public class ExchangeCluster implements Agent
 {
-    final RingBufferOneToOneHandler heartBeatFollowerHandler;
-    final RingBufferOneToOneHandler heartBeatLeaderHandler;
     ExchangeClusterState state;
     OneToOneRingBuffer commandsInboundRingBuffer;
     OneToOneRingBuffer commandsOutboundRingBuffer;
     OneToOneRingBuffer heartBeatInboundRingBuffer;
     OneToOneRingBuffer relayLogInboundRingBuffer;
 
-    public ExchangeCluster(
-        RingBufferOneToOneHandler heartBeatFollowerHandler,
-        RingBufferOneToOneHandler heartBeatLeaderHandler
-    )
+    public ExchangeCluster()
     {
         var commandInboundBuffer = new UnsafeBuffer(ByteBuffer.allocateDirect((1 << Env.BUFFER_SIZE_COMMAND_INBOUND_POW) + RingBufferDescriptor.TRAILER_LENGTH));
         var commandsOutboundBuffer = new UnsafeBuffer(ByteBuffer.allocateDirect((1 << Env.BUFFER_SIZE_COMMAND_OUTBOUND_POW) + RingBufferDescriptor.TRAILER_LENGTH));
@@ -38,9 +33,6 @@ public class ExchangeCluster implements Agent
         commandsOutboundRingBuffer = new OneToOneRingBuffer(commandsOutboundBuffer);
         heartBeatInboundRingBuffer = new OneToOneRingBuffer(heartBeatInboundBuffer);
         relayLogInboundRingBuffer = new OneToOneRingBuffer(relayLogInboundBuffer);
-
-        this.heartBeatFollowerHandler = heartBeatFollowerHandler;
-        this.heartBeatLeaderHandler = heartBeatLeaderHandler;
     }
 
     public void onStart()
@@ -48,16 +40,13 @@ public class ExchangeCluster implements Agent
         transitionToFollower();
     }
 
+    /**
+     * All inbound messages that change the state must be handled in these methods
+     */
     public int doWork() throws Exception
     {
-        if (state instanceof ExchangeClusterStateFollower)
-        {
-            heartBeatFollowerHandler.handle(this);
-        }
-        else if (state instanceof ExchangeClusterStateLeader)
-        {
-            heartBeatLeaderHandler.handle(this);
-        }
+        this.state.handleHeartBeat();
+
         return 0;
     }
 

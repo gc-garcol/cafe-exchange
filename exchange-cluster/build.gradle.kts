@@ -25,12 +25,15 @@ repositories {
     mavenCentral()
 }
 
+var agronaVersion = "1.23.1"
 var lombokVersion = "1.18.34"
 var jedisVersion = "5.2.0"
 
 dependencies {
     implementation(project(":exchange-core"))
     implementation("org.springframework.boot:spring-boot-starter-web")
+
+    implementation("org.agrona:agrona:${agronaVersion}")
 
     compileOnly("org.projectlombok:lombok:${lombokVersion}")
     annotationProcessor("org.projectlombok:lombok:${lombokVersion}")

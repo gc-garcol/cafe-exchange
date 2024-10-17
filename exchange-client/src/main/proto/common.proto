@@ -11,3 +11,13 @@ message BigDecimal {
   bytes value = 1;
   int32 scale = 2;
 }
+
+message LockVersion {
+  string lockName = 1;
+  optional UUID currentLock = 2;
+  UUID newLock = 3;
+}
+
+message OptimisticLock {
+  map<string, UUID> versions = 1;
+}

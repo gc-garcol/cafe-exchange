@@ -3,6 +3,8 @@ package gc.garcol.exchangecore;
 import org.agrona.concurrent.Agent;
 
 /**
+ * Fetch data from log and push to relayLogInboundRingBuffer.
+ *
  * @author thaivc
  * @since 2024
  */

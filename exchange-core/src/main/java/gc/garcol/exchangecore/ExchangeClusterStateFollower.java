@@ -2,7 +2,10 @@ package gc.garcol.exchangecore;
 
 import lombok.extern.slf4j.Slf4j;
 import org.agrona.concurrent.AgentRunner;
+import org.agrona.concurrent.ControlledMessageHandler;
 import org.agrona.concurrent.SleepingMillisIdleStrategy;
+
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * @author thaivc
@@ -11,14 +14,14 @@ import org.agrona.concurrent.SleepingMillisIdleStrategy;
 @Slf4j
 public class ExchangeClusterStateFollower implements ExchangeClusterState
 {
-    private final ExchangeCluster cluster;
+    private final ExchangeCluster exchangeCluster;
 
     private final AgentRunner replayLogRunner;
     private final AgentRunner heartBeatRunner;
 
     public ExchangeClusterStateFollower(final ExchangeCluster cluster)
     {
-        this.cluster = cluster;
+        this.exchangeCluster = cluster;
         var replayLogAgent = new AgentReplayLog();
         var heartBeatAgent = new AgentHeartBeat("Try to acquire leader role " + ClusterGlobal.NODE_ID);
 
@@ -46,5 +49,28 @@ public class ExchangeClusterStateFollower implements ExchangeClusterState
     {
         heartBeatRunner.close();
         replayLogRunner.close();
+    }
+
+    public void handleHeartBeat()
+    {
+        var ringBuffer = exchangeCluster.heartBeatInboundRingBuffer;
+
+        AtomicBoolean becomeLeaderDetect = new AtomicBoolean(false);
+        ringBuffer.controlledRead((messageType, buffer, offset, length) -> {
+            if (becomeLeaderDetect.get())
+            {
+                return ControlledMessageHandler.Action.CONTINUE;
+            }
+            boolean tryBecomeLeaderSuccess = buffer.getByte(offset) == 1;
+            if (tryBecomeLeaderSuccess)
+            {
+                becomeLeaderDetect.set(true);
+            }
+            return ControlledMessageHandler.Action.COMMIT;
+        });
+        if (becomeLeaderDetect.get())
+        {
+            exchangeCluster.transitionToLeader();
+        }
     }
 }

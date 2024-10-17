@@ -9,4 +9,6 @@ public interface ExchangeClusterState
     void start();
 
     void stop();
+
+    void handleHeartBeat();
 }
