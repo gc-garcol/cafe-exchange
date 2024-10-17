@@ -21,6 +21,8 @@ public class PLogRepository
     @SneakyThrows
     public PLogRepository()
     {
+        LogUtil.createDirectoryNX(Env.DATA_DIR);
+        LogUtil.createDirectoryNX(Env.LOG_DIR);
         logMetadata = readMetadata();
     }
 
@@ -47,8 +49,9 @@ public class PLogRepository
     }
 
     @SneakyThrows
-    public void write(long segment, CommandProto.Commands commands)
+    public void write(CommandProto.Commands commands)
     {
+        var segment = logMetadata.currentSegment();
         try (
             RandomAccessFile indexFile = new RandomAccessFile(LogUtil.indexName(segment), "rw");
             RandomAccessFile logFile = new RandomAccessFile(LogUtil.indexPath(segment), "rw")
@@ -74,8 +77,14 @@ public class PLogRepository
     @SneakyThrows
     private ELogMetadata readMetadata()
     {
-        try (RandomAccessFile metadataFile = new RandomAccessFile(Env.METADATA_FILE, "r"))
+        try (RandomAccessFile metadataFile = new RandomAccessFile(Env.METADATA_FILE, "rw"))
         {
+            if (metadataFile.length() == 0)
+            {
+                var metadata = new ELogMetadata().currentSegment(1);
+                writeMetadata(metadata);
+                return metadata;
+            }
             var buffer = new byte[(int)metadataFile.length()];
             metadataFile.readFully(buffer);
             var data = MetadataProto.LogMetadata.parseFrom(buffer);

@@ -14,6 +14,7 @@ public class Env
     public static final int MAX_COMMAND_SIZE = Integer.parseInt(dotenv.get("MAX_COMMAND_SIZE"));
     public static final int RECORDS_PER_TERM = Integer.parseInt(dotenv.get("RECORDS_PER_TERM"));
 
+    public static final String DATA_DIR = dotenv.get("DATA_DIR");
     public static final String LOG_DIR = dotenv.get("LOG_DIR");
     public static final String METADATA_FILE = dotenv.get("METADATA_FILE");
     public static final String SNAPSHOT_METADATA_FILE = dotenv.get("SNAPSHOT_METADATA_FILE");
