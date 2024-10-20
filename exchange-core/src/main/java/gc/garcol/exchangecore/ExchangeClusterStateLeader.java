@@ -1,11 +1,14 @@
 package gc.garcol.exchangecore;
 
+import gc.garcol.exchangecore.common.Env;
+import gc.garcol.exchangecore.ringbuffer.RingBufferOneToMany;
 import lombok.extern.slf4j.Slf4j;
 import org.agrona.concurrent.AgentRunner;
 import org.agrona.concurrent.ControlledMessageHandler;
 import org.agrona.concurrent.SleepingIdleStrategy;
 import org.agrona.concurrent.SleepingMillisIdleStrategy;
 
+import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
@@ -25,13 +28,21 @@ public class ExchangeClusterStateLeader implements ExchangeClusterState
         this.exchangeCluster = cluster;
 
         var heartBeatAgent = new AgentHeartBeat("Try to keep leader role " + ClusterGlobal.NODE_ID);
-        var journalerAgent = new AgentJournaler(exchangeCluster.commandsInboundRingBuffer);
 
         this.heartBeatRunner = new AgentRunner(
             new SleepingMillisIdleStrategy(10),
             error -> log.error("Leader heartBeat error", error),
             null,
             heartBeatAgent
+        );
+
+        var journalerAgent = new AgentJournaler();
+        var replayLogAgent = new AgentReplayLogImmediate();
+
+        // todo clean old buffer
+        this.exchangeCluster.commandsCommandRingBuffer = new RingBufferOneToMany(
+            Env.BUFFER_SIZE_COMMAND_INBOUND_POW,
+            List.of(journalerAgent, replayLogAgent)
         );
 
         this.journalerRunner = new AgentRunner(

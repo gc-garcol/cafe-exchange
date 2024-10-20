@@ -1,9 +1,11 @@
 package gc.garcol.exchangecore;
 
 import gc.garcol.exchangecore.common.Env;
+import gc.garcol.exchangecore.ringbuffer.RingBufferOneToMany;
 import lombok.extern.slf4j.Slf4j;
 import org.agrona.concurrent.Agent;
 import org.agrona.concurrent.UnsafeBuffer;
+import org.agrona.concurrent.ringbuffer.ManyToOneRingBuffer;
 import org.agrona.concurrent.ringbuffer.OneToOneRingBuffer;
 import org.agrona.concurrent.ringbuffer.RingBufferDescriptor;
 
@@ -17,7 +19,8 @@ import java.nio.ByteBuffer;
 public class ExchangeCluster implements Agent
 {
     ExchangeClusterState state;
-    OneToOneRingBuffer commandsInboundRingBuffer;
+    ManyToOneRingBuffer commandsInboundRingBuffer;
+    RingBufferOneToMany commandsCommandRingBuffer;
     OneToOneRingBuffer commandsOutboundRingBuffer;
     OneToOneRingBuffer heartBeatInboundRingBuffer;
     OneToOneRingBuffer relayLogInboundRingBuffer;
@@ -29,7 +32,7 @@ public class ExchangeCluster implements Agent
         var heartBeatInboundBuffer = new UnsafeBuffer(ByteBuffer.allocateDirect((1 << Env.BUFFER_SIZE_HEARTBEAT_POW) + RingBufferDescriptor.TRAILER_LENGTH));
         var relayLogInboundBuffer = new UnsafeBuffer(ByteBuffer.allocateDirect((1 << Env.BUFFER_SIZE_REPLAY_LOG_POW) + RingBufferDescriptor.TRAILER_LENGTH));
 
-        commandsInboundRingBuffer = new OneToOneRingBuffer(commandInboundBuffer);
+        commandsInboundRingBuffer = new ManyToOneRingBuffer(commandInboundBuffer);
         commandsOutboundRingBuffer = new OneToOneRingBuffer(commandsOutboundBuffer);
         heartBeatInboundRingBuffer = new OneToOneRingBuffer(heartBeatInboundBuffer);
         relayLogInboundRingBuffer = new OneToOneRingBuffer(relayLogInboundBuffer);
