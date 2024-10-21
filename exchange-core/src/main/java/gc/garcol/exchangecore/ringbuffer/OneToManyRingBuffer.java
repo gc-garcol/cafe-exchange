@@ -3,11 +3,8 @@ package gc.garcol.exchangecore.ringbuffer;
 import lombok.Getter;
 import lombok.experimental.Accessors;
 import org.agrona.concurrent.AtomicBuffer;
-import org.agrona.concurrent.UnsafeBuffer;
 import org.agrona.concurrent.ringbuffer.OneToOneRingBuffer;
-import org.agrona.concurrent.ringbuffer.RingBufferDescriptor;
 
-import java.nio.ByteBuffer;
 import java.util.List;
 import java.util.Objects;
 
@@ -17,18 +14,20 @@ import java.util.Objects;
  */
 @Getter
 @Accessors(fluent = true)
-public class RingBufferOneToMany
+public class OneToManyRingBuffer
 {
     private final OneToOneRingBuffer ringBuffer;
     private final ProducerSingle producer;
     private final List<ConsumerTemplate> consumers;
 
-    public RingBufferOneToMany(int ringSizePow, List<ConsumerTemplate> consumers)
+    public OneToManyRingBuffer(AtomicBuffer atomicBuffer, List<ConsumerTemplate> consumers)
     {
         Objects.requireNonNull(consumers, "Consumers cannot be null.");
-        assert !consumers.isEmpty();
+        if (consumers.isEmpty())
+        {
+            throw new IllegalArgumentException("Consumers cannot be empty.");
+        }
 
-        AtomicBuffer atomicBuffer = new UnsafeBuffer(ByteBuffer.allocateDirect((1 << ringSizePow) + RingBufferDescriptor.TRAILER_LENGTH));
         this.ringBuffer = new OneToOneRingBuffer(atomicBuffer);
         this.producer = new ProducerSingle("SingleProducer");
         this.consumers = consumers;
@@ -44,7 +43,8 @@ public class RingBufferOneToMany
             consumers.get(i).handleAfter(consumers.get(i - 1));
         }
         producer.ringBuffer(ringBuffer);
-        if (consumers.size() > 1) {
+        if (consumers.size() > 1)
+        {
             producer.lastConsumerBarrier(consumers.getLast().currentBarrier());
         }
     }

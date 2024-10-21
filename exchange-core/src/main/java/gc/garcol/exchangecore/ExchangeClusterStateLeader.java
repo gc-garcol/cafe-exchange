@@ -1,12 +1,14 @@
 package gc.garcol.exchangecore;
 
-import gc.garcol.exchangecore.common.Env;
-import gc.garcol.exchangecore.ringbuffer.RingBufferOneToMany;
+import gc.garcol.exchangecore.common.ByteUtil;
+import gc.garcol.exchangecore.ringbuffer.ManyToManyRingBuffer;
+import gc.garcol.exchangecore.ringbuffer.OneToManyRingBuffer;
 import lombok.extern.slf4j.Slf4j;
 import org.agrona.concurrent.AgentRunner;
 import org.agrona.concurrent.ControlledMessageHandler;
 import org.agrona.concurrent.SleepingIdleStrategy;
 import org.agrona.concurrent.SleepingMillisIdleStrategy;
+import org.agrona.concurrent.ringbuffer.ManyToOneRingBuffer;
 
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -20,51 +22,81 @@ public class ExchangeClusterStateLeader implements ExchangeClusterState
 {
     private final ExchangeCluster exchangeCluster;
 
+    private final AgentRunner commandInboundTransformerRunner;
     private final AgentRunner heartBeatRunner;
     private final AgentRunner journalerRunner;
+    private final AgentRunner replayLogRunner;
 
     public ExchangeClusterStateLeader(final ExchangeCluster cluster)
     {
         this.exchangeCluster = cluster;
 
         var heartBeatAgent = new AgentHeartBeat("Try to keep leader role " + ClusterGlobal.NODE_ID);
-
-        this.heartBeatRunner = new AgentRunner(
-            new SleepingMillisIdleStrategy(10),
-            error -> log.error("Leader heartBeat error", error),
-            null,
-            heartBeatAgent
-        );
-
         var journalerAgent = new AgentJournaler();
-        var replayLogAgent = new AgentReplayLogImmediate();
+        var replayLogAgent = new AgentReplayLogImmediate(ExchangeIOC.SINGLETON.getInstance(StateMachineDelegate.class));
 
-        // todo clean old buffer
-        this.exchangeCluster.commandsCommandRingBuffer = new RingBufferOneToMany(
-            Env.BUFFER_SIZE_COMMAND_INBOUND_POW,
+        ByteUtil.eraseByteBuffer(exchangeCluster.commandAcceptorBuffer.byteBuffer());
+        ByteUtil.eraseByteBuffer(exchangeCluster.commandBuffer.byteBuffer());
+
+        var manyToOneRingBuffer = new ManyToOneRingBuffer(exchangeCluster.commandAcceptorBuffer);
+        var oneToManyRingBuffer = new OneToManyRingBuffer(
+            exchangeCluster.commandBuffer,
             List.of(journalerAgent, replayLogAgent)
         );
 
+        exchangeCluster.commandInboundRingBuffer = new ManyToManyRingBuffer(
+            manyToOneRingBuffer,
+            oneToManyRingBuffer
+        );
+
+        var agentCommandInboundTransformer = new AgentCommandInboundTransformer(exchangeCluster.commandInboundRingBuffer);
+
+        this.commandInboundTransformerRunner = new AgentRunner(
+            new SleepingIdleStrategy(),
+            error -> log.error("Leader commandInboundTransformer error", error),
+            null,
+            agentCommandInboundTransformer
+        );
+
         this.journalerRunner = new AgentRunner(
-            new SleepingIdleStrategy(1),
+            new SleepingIdleStrategy(10_000),
             error -> log.error("Leader journaler error", error),
             null,
             journalerAgent
+        );
+
+        this.replayLogRunner = new AgentRunner(
+            new SleepingIdleStrategy(),
+            error -> log.error("Leader replayLog error", error),
+            null,
+            replayLogAgent
+        );
+
+        this.heartBeatRunner = new AgentRunner(
+            new SleepingMillisIdleStrategy(50),
+            error -> log.error("Leader heartBeat error", error),
+            null,
+            heartBeatAgent
         );
     }
 
     public void start()
     {
-        ClusterGlobal.ENABLE_COMMAND_INBOUND.set(true);
+        AgentRunner.startOnThread(commandInboundTransformerRunner);
         AgentRunner.startOnThread(heartBeatRunner);
         AgentRunner.startOnThread(journalerRunner);
+        AgentRunner.startOnThread(replayLogRunner);
+
+        ClusterGlobal.ENABLE_COMMAND_INBOUND.set(true);
     }
 
     public void stop()
     {
         ClusterGlobal.ENABLE_COMMAND_INBOUND.set(false);
+        commandInboundTransformerRunner.close();
         heartBeatRunner.close();
         journalerRunner.close();
+        replayLogRunner.close();
     }
 
     public void handleHeartBeat()
