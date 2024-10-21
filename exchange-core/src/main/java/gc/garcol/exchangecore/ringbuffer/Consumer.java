@@ -10,9 +10,9 @@ public interface Consumer
 {
     ConsumerTemplate handleAfter(ConsumerTemplate previousConsumer);
 
-    void poll();
+    int poll();
 
-    void poll(int limit);
+    int poll(int limit);
 
     void consume(final int msgTypeId, final MutableDirectBuffer buffer, final int index, final int length);
 }

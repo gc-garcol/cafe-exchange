@@ -52,41 +52,51 @@ public abstract class ConsumerTemplate implements Consumer
     }
 
     @Override
-    public void poll()
+    public int poll()
     {
         if (ringBuffer != null)
         {
-            this.ringBuffer.controlledRead(this::onMessage);
-            this.ringBuffer.controlledRead(this::onMessage); // double read because of a bug in agrona when reading at the end of ringBuffer
+            return this.ringBuffer.controlledRead(this::onMessage)
+                + this.ringBuffer.controlledRead(this::onMessage); // double read because of a bug in agrona when reading at the end of ringBuffer
         }
         else
         {
-            this.ringBufferReader.controlledRead(this::onMessage);
-            this.ringBufferReader.controlledRead(this::onMessage);
+            return this.ringBufferReader.controlledRead(this::onMessage)
+                + this.ringBufferReader.controlledRead(this::onMessage);
         }
     }
 
     @Override
-    public void poll(final int limit)
+    public int poll(final int limit)
     {
+        int readMsg;
         if (ringBuffer != null)
         {
-            this.ringBuffer.controlledRead(this::onMessage, limit);
+            readMsg = this.ringBuffer.controlledRead(this::onMessage, limit);
+            if (readMsg < limit)
+            {
+                readMsg += this.ringBuffer.controlledRead(this::onMessage, limit - readMsg);
+            }
         }
         else
         {
-            this.ringBufferReader.controlledRead(this::onMessage, limit);
+            readMsg = this.ringBufferReader.controlledRead(this::onMessage, limit);
+            if (readMsg < limit)
+            {
+                readMsg += this.ringBufferReader.controlledRead(this::onMessage, limit - readMsg);
+            }
         }
+        return readMsg;
     }
 
     private ControlledMessageHandler.Action onMessage(int msgTypeId, MutableDirectBuffer buffer, int index, int length)
     {
         boolean isNextCircle = index < currentBarrier.index();
-        long readCircle = isNextCircle ? currentBarrier.circle() + 1 : currentBarrier.circle();
+        boolean currentFlip = isNextCircle != currentBarrier.flip();
         int recordIndex = index - HEADER_LENGTH;
         if (previousBarrier != null)
         {
-            if (readCircle == previousBarrier.circle() && recordIndex > previousBarrier.index())
+            if (currentFlip == previousBarrier.flip() && recordIndex > previousBarrier.index())
             {
                 return ControlledMessageHandler.Action.ABORT;
             }
@@ -95,7 +105,7 @@ public abstract class ConsumerTemplate implements Consumer
 
         final int recordLength = length + RecordDescriptor.HEADER_LENGTH;
         final int alignedRecordLength = align(recordLength, ALIGNMENT);
-        currentBarrier.pointer.set(new AtomicPointer.Pointer(readCircle, recordIndex, alignedRecordLength));
+        currentBarrier.pointer.set(new AtomicPointer.Pointer(currentFlip, recordIndex, alignedRecordLength));
         return ControlledMessageHandler.Action.COMMIT;
     }
 }

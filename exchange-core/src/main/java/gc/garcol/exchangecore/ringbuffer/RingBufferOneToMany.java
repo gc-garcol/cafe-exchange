@@ -44,6 +44,8 @@ public class RingBufferOneToMany
             consumers.get(i).handleAfter(consumers.get(i - 1));
         }
         producer.ringBuffer(ringBuffer);
-        producer.lastConsumerBarrier(consumers.getLast().currentBarrier());
+        if (consumers.size() > 1) {
+            producer.lastConsumerBarrier(consumers.getLast().currentBarrier());
+        }
     }
 }

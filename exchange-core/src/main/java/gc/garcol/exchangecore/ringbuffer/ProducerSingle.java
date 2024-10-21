@@ -39,7 +39,7 @@ public class ProducerSingle implements Producer
     @Override
     public boolean publish(int messageTypeId, byte[] message)
     {
-        long expectedClaimCircle = 0;
+        boolean expectedFlip = false;
         int alignedRecordLength = 0;
         if (lastConsumerBarrier != null)
         {
@@ -55,12 +55,12 @@ public class ProducerSingle implements Producer
 
             int expectedEndIndex = recordIndex + alignedRecordLength;
             boolean isNextCircle = expectedEndIndex < currentBarrier.index();
-            expectedClaimCircle = isNextCircle ? currentBarrier.circle() + 1 : currentBarrier.circle();
+            expectedFlip = isNextCircle != currentBarrier.flip();
 
-            final int lastConsumerTail = (lastConsumerBarrier.index() + lastConsumerBarrier.length()) & (ringBuffer.capacity() - 1);
-            final long lastConsumerCircle = lastConsumerBarrier.circle();
+            final int lastConsumerTail = lastConsumerBarrier.index() + lastConsumerBarrier.length();
+            final boolean lastConsumerFlip = lastConsumerBarrier.flip();
 
-            if (expectedClaimCircle > lastConsumerCircle && expectedEndIndex >= lastConsumerTail)
+            if (lastConsumerFlip != expectedFlip && expectedEndIndex >= lastConsumerTail)
             {
                 return false;
             }
@@ -74,7 +74,7 @@ public class ProducerSingle implements Producer
 
         if (lastConsumerBarrier != null)
         {
-            currentBarrier.pointer.set(new AtomicPointer.Pointer(expectedClaimCircle, claimIndex - HEADER_LENGTH, alignedRecordLength));
+            currentBarrier.pointer.set(new AtomicPointer.Pointer(expectedFlip, claimIndex - HEADER_LENGTH, alignedRecordLength));
         }
         ringBuffer.buffer().putBytes(claimIndex, message);
         ringBuffer.commit(claimIndex);
