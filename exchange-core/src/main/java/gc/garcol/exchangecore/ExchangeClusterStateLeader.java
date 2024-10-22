@@ -1,7 +1,8 @@
 package gc.garcol.exchangecore;
 
-import gc.garcol.exchange.proto.CommandProto;
+import gc.garcol.exchange.proto.ClusterPayloadProto;
 import gc.garcol.exchangecore.common.ByteUtil;
+import gc.garcol.exchangecore.common.ClusterConstant;
 import gc.garcol.exchangecore.ringbuffer.ManyToManyRingBuffer;
 import gc.garcol.exchangecore.ringbuffer.OneToManyRingBuffer;
 import lombok.extern.slf4j.Slf4j;
@@ -35,23 +36,23 @@ public class ExchangeClusterStateLeader implements ExchangeClusterState
 
         var heartBeatAgent = new AgentHeartBeat("Try to keep leader role " + ClusterGlobal.NODE_ID);
         var journalerAgent = new AgentJournaler();
-        var replayLogAgent = new AgentReplayLogImmediate(ExchangeIOC.SINGLETON.getInstance(StateMachineDelegate.class));
+        var replayLogAgent = new AgentRequestConsumer(ExchangeIOC.SINGLETON.getInstance(StateMachineDelegate.class));
 
-        ByteUtil.eraseByteBuffer(exchangeCluster.commandAcceptorBuffer.byteBuffer());
-        ByteUtil.eraseByteBuffer(exchangeCluster.commandBuffer.byteBuffer());
+        ByteUtil.eraseByteBuffer(exchangeCluster.requestAcceptorBuffer.byteBuffer());
+        ByteUtil.eraseByteBuffer(exchangeCluster.requestBuffer.byteBuffer());
 
-        var manyToOneRingBuffer = new ManyToOneRingBuffer(exchangeCluster.commandAcceptorBuffer);
+        var manyToOneRingBuffer = new ManyToOneRingBuffer(exchangeCluster.requestAcceptorBuffer);
         var oneToManyRingBuffer = new OneToManyRingBuffer(
-            exchangeCluster.commandBuffer,
+            exchangeCluster.requestBuffer,
             List.of(journalerAgent, replayLogAgent)
         );
 
-        exchangeCluster.commandInboundRingBuffer = new ManyToManyRingBuffer(
+        exchangeCluster.requestRingBuffer = new ManyToManyRingBuffer(
             manyToOneRingBuffer,
             oneToManyRingBuffer
         );
 
-        var agentCommandInboundTransformer = new AgentCommandInboundTransformer(exchangeCluster.commandInboundRingBuffer);
+        var agentCommandInboundTransformer = new AgentRequestTransformConsumer(exchangeCluster.requestRingBuffer);
 
         this.commandInboundTransformerRunner = new AgentRunner(
             new SleepingIdleStrategy(),
@@ -82,6 +83,7 @@ public class ExchangeClusterStateLeader implements ExchangeClusterState
         );
     }
 
+    @Override
     public void start()
     {
         AgentRunner.startOnThread(commandInboundTransformerRunner);
@@ -92,6 +94,7 @@ public class ExchangeClusterStateLeader implements ExchangeClusterState
         ClusterGlobal.ENABLE_COMMAND_INBOUND.set(true);
     }
 
+    @Override
     public void stop()
     {
         ClusterGlobal.ENABLE_COMMAND_INBOUND.set(false);
@@ -102,7 +105,16 @@ public class ExchangeClusterStateLeader implements ExchangeClusterState
     }
 
     @Override
-    public void handleHeartBeat()
+    public boolean enqueueRequest(UUID sender, ClusterPayloadProto.Request request)
+    {
+        int messageType = request.getPayloadCase() == ClusterPayloadProto.Request.PayloadCase.COMMAND
+            ? ClusterConstant.COMMAND_MSG_TYPE
+            : ClusterConstant.QUERY_MSG_TYPE;
+        return exchangeCluster.requestRingBuffer.publishMessage(messageType, sender, request.toByteArray());
+    }
+
+    @Override
+    public void handleHeartBeatEvent()
     {
         var ringBuffer = exchangeCluster.heartBeatInboundRingBuffer;
 
@@ -123,11 +135,5 @@ public class ExchangeClusterStateLeader implements ExchangeClusterState
         {
             exchangeCluster.transitionToFollower();
         }
-    }
-
-    @Override
-    public boolean handleCommands(UUID sender, CommandProto.Command command)
-    {
-        return exchangeCluster.commandInboundRingBuffer.publishMessage(sender, command.toByteArray());
     }
 }

@@ -22,9 +22,9 @@ public class ManyToManyRingBuffer
     private final ManyToOneRingBuffer inboundRingBuffer;
     private final OneToManyRingBuffer oneToManyRingBuffer;
 
-    public boolean publishMessage(UUID sender, byte[] message)
+    public boolean publishMessage(int messageType, UUID sender, byte[] message)
     {
-        int claimIndex = inboundRingBuffer.tryClaim(1, message.length + UUID_LENGTH);
+        int claimIndex = inboundRingBuffer.tryClaim(messageType, message.length + UUID_LENGTH);
         if (claimIndex <= 0)
         {
             return false;

@@ -7,10 +7,13 @@ import lombok.RequiredArgsConstructor;
  * @since 2024
  */
 @RequiredArgsConstructor
-public enum ErrorCode
+public enum StatusCode
 {
-    FOLLOWER_CANNOT_HANDLE_COMMAND(1);
-
+    SUCCESS(200),
+    BAD_REQUEST(400),
+    UNAUTHORIZED(401),
+    FORBIDDEN(403),
+    ;
     public final int code;
 
 }

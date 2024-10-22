@@ -5,19 +5,22 @@ option java_outer_classname = "BalanceCommandProto";
 import "common.proto";
 
 message CreateBalance {
-  int64 ownerId = 1;
+  UUID correlationId = 1;
+  int64 ownerId = 2;
 }
 
 message Deposit {
-  int64 ownerId = 1;
-  string asset = 2;
-  BigDecimal amount = 3;
-  LockVersion version = 4;
+  UUID correlationId = 1;
+  int64 ownerId = 2;
+  string asset = 3;
+  BigDecimal amount = 4;
+  LockVersion version = 5;
 }
 
 message Withdrawn {
-  int64 ownerId = 1;
-  string asset = 2;
-  BigDecimal amount = 3;
-  LockVersion version = 4;
+  UUID correlationId = 1;
+  int64 ownerId = 2;
+  string asset = 3;
+  BigDecimal amount = 4;
+  LockVersion version = 5;
 }

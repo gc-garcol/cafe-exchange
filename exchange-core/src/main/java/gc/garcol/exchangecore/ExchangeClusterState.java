@@ -1,6 +1,6 @@
 package gc.garcol.exchangecore;
 
-import gc.garcol.exchange.proto.CommandProto;
+import gc.garcol.exchange.proto.ClusterPayloadProto;
 
 import java.util.UUID;
 
@@ -14,7 +14,7 @@ public interface ExchangeClusterState
 
     void stop();
 
-    void handleHeartBeat();
+    boolean enqueueRequest(UUID sender, ClusterPayloadProto.Request request);
 
-    boolean handleCommands(UUID sender, CommandProto.Command command);
+    void handleHeartBeatEvent();
 }

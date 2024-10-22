@@ -28,15 +28,15 @@ public class AgentClientReply extends ConsumerTemplate implements Agent
 
     public boolean consume(final int msgTypeId, final MutableDirectBuffer buffer, final int index, final int length)
     {
-        var claimIndex = exchangeCluster.commandsOutboundRingBuffer.tryClaim(1, length);
+        var claimIndex = exchangeCluster.responseRingBuffer.tryClaim(1, length);
         if (claimIndex <= 0)
         {
             return false;
         }
         byte[] bytes = new byte[length];
         buffer.getBytes(index, bytes);
-        exchangeCluster.commandsOutboundRingBuffer.buffer().putBytes(claimIndex, bytes);
-        exchangeCluster.commandsOutboundRingBuffer.commit(claimIndex);
+        exchangeCluster.responseRingBuffer.buffer().putBytes(claimIndex, bytes);
+        exchangeCluster.responseRingBuffer.commit(claimIndex);
         return true;
     }
 }

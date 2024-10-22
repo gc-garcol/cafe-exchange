@@ -23,9 +23,9 @@ public class Env
     public static final String LEADER_KEY = dotenv.get("LEADER_KEY");
     public static final long LEADER_TTL_MS = Long.parseLong(dotenv.get("LEADER_TTL_MS"));
 
-    public static final int BUFFER_SIZE_COMMAND_INBOUND_ACCEPTOR_POW = Integer.parseInt(dotenv.get("BUFFER_SIZE_COMMAND_INBOUND_ACCEPTOR_POW"));
-    public static final int BUFFER_SIZE_COMMAND_INBOUND_POW = Integer.parseInt(dotenv.get("BUFFER_SIZE_COMMAND_INBOUND_POW"));
-    public static final int BUFFER_SIZE_COMMAND_OUTBOUND_POW = Integer.parseInt(dotenv.get("BUFFER_SIZE_COMMAND_OUTBOUND_POW"));
+    public static final int BUFFER_SIZE_REQUEST_ACCEPTOR_POW = Integer.parseInt(dotenv.get("BUFFER_SIZE_REQUEST_ACCEPTOR_POW"));
+    public static final int BUFFER_SIZE_REQUEST_POW = Integer.parseInt(dotenv.get("BUFFER_SIZE_REQUEST_POW"));
+    public static final int BUFFER_SIZE_RESPONSE_POW = Integer.parseInt(dotenv.get("BUFFER_SIZE_RESPONSE_POW"));
     public static final int BUFFER_SIZE_HEARTBEAT_POW = Integer.parseInt(dotenv.get("BUFFER_SIZE_HEARTBEAT_POW"));
     public static final int BUFFER_SIZE_REPLAY_LOG_POW = Integer.parseInt(dotenv.get("BUFFER_SIZE_REPLAY_LOG_POW"));
 }

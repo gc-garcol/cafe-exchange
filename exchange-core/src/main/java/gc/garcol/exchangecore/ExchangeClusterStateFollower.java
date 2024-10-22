@@ -1,7 +1,9 @@
 package gc.garcol.exchangecore;
 
-import gc.garcol.exchange.proto.CommandProto;
+import gc.garcol.exchange.proto.ClusterPayloadProto;
 import gc.garcol.exchangecore.common.ByteUtil;
+import gc.garcol.exchangecore.common.ResponseCode;
+import gc.garcol.exchangecore.common.StatusCode;
 import gc.garcol.exchangecore.ringbuffer.ManyToManyRingBuffer;
 import gc.garcol.exchangecore.ringbuffer.OneToManyRingBuffer;
 import lombok.extern.slf4j.Slf4j;
@@ -11,11 +13,8 @@ import org.agrona.concurrent.SleepingMillisIdleStrategy;
 import org.agrona.concurrent.ringbuffer.ManyToOneRingBuffer;
 
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
-
-import static gc.garcol.exchangecore.common.ClusterConstant.EMPTY_BYTE_ARRAY;
 
 /**
  * @author thaivc
@@ -28,25 +27,23 @@ public class ExchangeClusterStateFollower implements ExchangeClusterState
 
     private final AgentRunner replayLogRunner;
     private final AgentRunner heartBeatRunner;
-    private final AgentRunner clientReplyRunner;
 
     public ExchangeClusterStateFollower(final ExchangeCluster cluster)
     {
         this.exchangeCluster = cluster;
         var replayLogAgent = new AgentReplayLog();
         var heartBeatAgent = new AgentHeartBeat("Try to acquire leader role " + ClusterGlobal.NODE_ID);
-        var clientReplyAgent = new AgentClientReply(exchangeCluster);
 
-        ByteUtil.eraseByteBuffer(exchangeCluster.commandAcceptorBuffer.byteBuffer());
-        ByteUtil.eraseByteBuffer(exchangeCluster.commandBuffer.byteBuffer());
+        ByteUtil.eraseByteBuffer(exchangeCluster.requestAcceptorBuffer.byteBuffer());
+        ByteUtil.eraseByteBuffer(exchangeCluster.requestBuffer.byteBuffer());
 
-        var manyToOneRingBuffer = new ManyToOneRingBuffer(exchangeCluster.commandAcceptorBuffer);
+        var manyToOneRingBuffer = new ManyToOneRingBuffer(exchangeCluster.requestAcceptorBuffer);
         var oneToManyRingBuffer = new OneToManyRingBuffer(
-            exchangeCluster.commandBuffer,
-            List.of(clientReplyAgent)
+            exchangeCluster.requestBuffer,
+            List.of()
         );
 
-        exchangeCluster.commandInboundRingBuffer = new ManyToManyRingBuffer(
+        exchangeCluster.requestRingBuffer = new ManyToManyRingBuffer(
             manyToOneRingBuffer,
             oneToManyRingBuffer
         );
@@ -63,31 +60,35 @@ public class ExchangeClusterStateFollower implements ExchangeClusterState
             null,
             heartBeatAgent
         );
-
-        this.clientReplyRunner = new AgentRunner(
-            new SleepingMillisIdleStrategy(),
-            error -> log.error("Follower clientReply error", error),
-            null,
-            new AgentClientReply(exchangeCluster)
-        );
     }
 
+    @Override
     public void start()
     {
         AgentRunner.startOnThread(heartBeatRunner);
         AgentRunner.startOnThread(replayLogRunner);
-        AgentRunner.startOnThread(clientReplyRunner);
     }
 
+    @Override
     public void stop()
     {
         heartBeatRunner.close();
         replayLogRunner.close();
-        clientReplyRunner.close();
     }
 
     @Override
-    public void handleHeartBeat()
+    public boolean enqueueRequest(UUID sender, ClusterPayloadProto.Request request)
+    {
+        return exchangeCluster.requestRingBuffer
+            .publishMessage(1, sender, ClusterPayloadProto.CommonResponse
+                .newBuilder()
+                .setCode(StatusCode.BAD_REQUEST.code)
+                .setStatus(ResponseCode.FOLLOWER_CANNOT_HANDLE_REQUEST.code)
+                .build().toByteArray());
+    }
+
+    @Override
+    public void handleHeartBeatEvent()
     {
         var ringBuffer = exchangeCluster.heartBeatInboundRingBuffer;
 
@@ -108,13 +109,5 @@ public class ExchangeClusterStateFollower implements ExchangeClusterState
         {
             exchangeCluster.transitionToLeader();
         }
-    }
-
-    @Override
-    public boolean handleCommands(UUID sender, CommandProto.Command command)
-    {
-        return exchangeCluster.commandInboundRingBuffer
-            .publishMessage(sender, Optional.ofNullable(exchangeCluster.currentLeader)
-                .map(String::getBytes).orElse(EMPTY_BYTE_ARRAY));
     }
 }

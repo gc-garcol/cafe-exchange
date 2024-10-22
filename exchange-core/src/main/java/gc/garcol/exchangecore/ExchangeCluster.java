@@ -10,6 +10,7 @@ import org.agrona.concurrent.ringbuffer.OneToOneRingBuffer;
 import org.agrona.concurrent.ringbuffer.RingBufferDescriptor;
 
 import java.nio.ByteBuffer;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * @author thaivc
@@ -20,26 +21,26 @@ public class ExchangeCluster implements Agent
 {
     ExchangeClusterState state;
 
-    String currentLeader;
+    AtomicReference<String> currentLeader;
 
-    AtomicBuffer commandAcceptorBuffer;
-    AtomicBuffer commandBuffer;
+    AtomicBuffer requestAcceptorBuffer;
+    AtomicBuffer requestBuffer;
 
-    ManyToManyRingBuffer commandInboundRingBuffer;
-    OneToOneRingBuffer commandsOutboundRingBuffer;
+    ManyToManyRingBuffer requestRingBuffer;
+    OneToOneRingBuffer responseRingBuffer;
     OneToOneRingBuffer heartBeatInboundRingBuffer;
     OneToOneRingBuffer relayLogInboundRingBuffer;
 
     public ExchangeCluster()
     {
-        commandAcceptorBuffer = new UnsafeBuffer(ByteBuffer.allocateDirect((1 << Env.BUFFER_SIZE_COMMAND_INBOUND_ACCEPTOR_POW) + RingBufferDescriptor.TRAILER_LENGTH));
-        commandBuffer = new UnsafeBuffer(ByteBuffer.allocateDirect((1 << Env.BUFFER_SIZE_COMMAND_INBOUND_POW) + RingBufferDescriptor.TRAILER_LENGTH));
+        requestAcceptorBuffer = new UnsafeBuffer(ByteBuffer.allocateDirect((1 << Env.BUFFER_SIZE_REQUEST_ACCEPTOR_POW) + RingBufferDescriptor.TRAILER_LENGTH));
+        requestBuffer = new UnsafeBuffer(ByteBuffer.allocateDirect((1 << Env.BUFFER_SIZE_REQUEST_POW) + RingBufferDescriptor.TRAILER_LENGTH));
 
-        var commandsOutboundBuffer = new UnsafeBuffer(ByteBuffer.allocateDirect((1 << Env.BUFFER_SIZE_COMMAND_OUTBOUND_POW) + RingBufferDescriptor.TRAILER_LENGTH));
+        var commandsOutboundBuffer = new UnsafeBuffer(ByteBuffer.allocateDirect((1 << Env.BUFFER_SIZE_RESPONSE_POW) + RingBufferDescriptor.TRAILER_LENGTH));
         var heartBeatInboundBuffer = new UnsafeBuffer(ByteBuffer.allocateDirect((1 << Env.BUFFER_SIZE_HEARTBEAT_POW) + RingBufferDescriptor.TRAILER_LENGTH));
         var relayLogInboundBuffer = new UnsafeBuffer(ByteBuffer.allocateDirect((1 << Env.BUFFER_SIZE_REPLAY_LOG_POW) + RingBufferDescriptor.TRAILER_LENGTH));
 
-        commandsOutboundRingBuffer = new OneToOneRingBuffer(commandsOutboundBuffer);
+        responseRingBuffer = new OneToOneRingBuffer(commandsOutboundBuffer);
         heartBeatInboundRingBuffer = new OneToOneRingBuffer(heartBeatInboundBuffer);
         relayLogInboundRingBuffer = new OneToOneRingBuffer(relayLogInboundBuffer);
     }
@@ -54,7 +55,7 @@ public class ExchangeCluster implements Agent
      */
     public int doWork() throws Exception
     {
-        this.state.handleHeartBeat();
+        this.state.handleHeartBeatEvent();
 
         return 0;
     }

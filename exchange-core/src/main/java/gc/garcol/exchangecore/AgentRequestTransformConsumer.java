@@ -9,7 +9,7 @@ import org.agrona.concurrent.Agent;
  * @since 2024
  */
 @RequiredArgsConstructor
-public class AgentCommandInboundTransformer implements Agent
+public class AgentRequestTransformConsumer implements Agent
 {
 
     private final ManyToManyRingBuffer ringBuffer;

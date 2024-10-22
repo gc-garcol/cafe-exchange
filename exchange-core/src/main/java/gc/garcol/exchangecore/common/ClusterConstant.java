@@ -9,6 +9,9 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor(access = lombok.AccessLevel.PRIVATE)
 public class ClusterConstant
 {
+    public static final int COMMAND_MSG_TYPE = 10;
+    public static final int QUERY_MSG_TYPE = 11;
+
     public static final int LONG_LENGTH = 8;
     public static final int UUID_LENGTH = 16;
 
