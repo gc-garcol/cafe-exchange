@@ -1,6 +1,7 @@
 package gc.garcol.exchangecore;
 
 import gc.garcol.exchange.proto.CommandProto;
+import gc.garcol.exchangecore.domain.CommonResponse;
 
 /**
  * @author thaivc
@@ -8,5 +9,5 @@ import gc.garcol.exchange.proto.CommandProto;
  */
 public interface StateMachine
 {
-    void apply(CommandProto.Command command);
+    CommonResponse apply(CommandProto.Command command);
 }

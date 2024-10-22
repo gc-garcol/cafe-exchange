@@ -1,6 +1,7 @@
 package gc.garcol.exchangecore;
 
 import gc.garcol.exchange.proto.CommandProto;
+import gc.garcol.exchangecore.domain.CommonResponse;
 
 /**
  * @author thaivc
@@ -8,9 +9,9 @@ import gc.garcol.exchange.proto.CommandProto;
  */
 public class StateMachineOrder implements StateMachine, StateMachinePersistable
 {
-    public void apply(final CommandProto.Command command)
+    public CommonResponse apply(final CommandProto.Command command)
     {
-
+        return null;
     }
 
     public void loadSnapshot()

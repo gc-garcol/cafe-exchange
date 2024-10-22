@@ -1,6 +1,9 @@
 package gc.garcol.exchangecore;
 
 import gc.garcol.exchange.proto.CommandProto;
+import gc.garcol.exchangecore.common.ResponseCode;
+import gc.garcol.exchangecore.common.StatusCode;
+import gc.garcol.exchangecore.domain.CommonResponse;
 import lombok.RequiredArgsConstructor;
 
 /**
@@ -14,13 +17,13 @@ public class StateMachineDelegate implements StateMachine
     private final StateMachineBalance stateMachineBalance;
     private final StateMachineOrder stateMachineOrder;
 
-    public void apply(final CommandProto.Command command)
+    public CommonResponse apply(final CommandProto.Command command)
     {
-        switch (command.getPayloadCase())
+        return switch (command.getPayloadCase())
         {
             case CREATEBALANCE, WITHDRAWN, DEPOSIT -> stateMachineBalance.apply(command);
             case NEWORDER, CANCELOPTIONORDER -> stateMachineOrder.apply(command);
-            default -> throw new IllegalStateException("Unexpected value: " + command.getParserForType());
-        }
+            default -> new CommonResponse(StatusCode.BAD_REQUEST.code, ResponseCode.COMMAND_TYPE_NOT_FOUND.code);
+        };
     }
 }
