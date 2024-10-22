@@ -22,8 +22,8 @@ import java.util.UUID;
 public class Balance
 {
     private long ownerId;
-    Map<String, Asset> assets;
-    Map<String, UUID> versions;
+    private Map<String, Asset> assets;
+    private Map<String, UUID> versions;
 
     public static Balance create(long ownerId)
     {

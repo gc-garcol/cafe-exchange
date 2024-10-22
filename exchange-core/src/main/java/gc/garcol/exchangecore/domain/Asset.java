@@ -19,8 +19,8 @@ public class Asset
 {
     public static final int PRECISION = 8;
 
-    String id;
-    BigDecimal availableAmount;
-    BigDecimal lockAmount;
-    Map<String, UUID> versions;
+    private String id;
+    private BigDecimal availableAmount;
+    private BigDecimal lockAmount;
+    private Map<String, UUID> versions;
 }

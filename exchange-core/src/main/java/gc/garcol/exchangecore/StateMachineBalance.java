@@ -12,6 +12,7 @@ import org.agrona.collections.Long2ObjectHashMap;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.Objects;
+import java.util.UUID;
 
 /**
  * @author thaivc
@@ -57,8 +58,21 @@ public class StateMachineBalance implements StateMachine, StateMachinePersistabl
         {
             return new CommonResponse(StatusCode.BAD_REQUEST.code, ResponseCode.ASSET_NOT_FOUND.code);
         }
-        BigDecimal depositAmount = new BigDecimal(deposit.getAmount().getValue()
-            .toString()).setScale(Asset.PRECISION, RoundingMode.HALF_UP);
+
+        UUID currentVersion = asset.versions().get(deposit.getVersion().getLockName());
+        UUID requestCurrentVersion = new UUID(
+            deposit.getVersion().getCurrentLock().getUuidMsb(),
+            deposit.getVersion().getCurrentLock().getUuidLsb()
+        );
+
+        if (!Objects.equals(currentVersion, requestCurrentVersion))
+        {
+            return new CommonResponse(StatusCode.BAD_REQUEST.code, ResponseCode.MODIFIED_INSUFFICIENT_VERSION.code);
+        }
+
+        BigDecimal depositAmount = new BigDecimal(
+            deposit.getAmount().getValue().toString()
+        ).setScale(Asset.PRECISION, RoundingMode.HALF_UP);
         BigDecimal newAmount = asset.availableAmount().add(depositAmount);
         asset.availableAmount(newAmount);
         return new CommonResponse(StatusCode.SUCCESS.code, ResponseCode.BALANCE_DEPOSIT_SUCCESS.code);
@@ -77,8 +91,21 @@ public class StateMachineBalance implements StateMachine, StateMachinePersistabl
         {
             return new CommonResponse(StatusCode.BAD_REQUEST.code, ResponseCode.ASSET_NOT_FOUND.code);
         }
-        BigDecimal withdrawnAmount = new BigDecimal(withdrawn.getAmount().getValue()
-            .toString()).setScale(Asset.PRECISION, RoundingMode.HALF_UP);
+
+        UUID currentVersion = asset.versions().get(withdrawn.getVersion().getLockName());
+        UUID requestCurrentVersion = new UUID(
+            withdrawn.getVersion().getCurrentLock().getUuidMsb(),
+            withdrawn.getVersion().getCurrentLock().getUuidLsb()
+        );
+
+        if (!Objects.equals(currentVersion, requestCurrentVersion))
+        {
+            return new CommonResponse(StatusCode.BAD_REQUEST.code, ResponseCode.MODIFIED_INSUFFICIENT_VERSION.code);
+        }
+
+        BigDecimal withdrawnAmount = new BigDecimal(
+            withdrawn.getAmount().getValue().toString()
+        ).setScale(Asset.PRECISION, RoundingMode.HALF_UP);
 
         if (withdrawnAmount.compareTo(asset.availableAmount()) < 0)
         {
@@ -87,6 +114,11 @@ public class StateMachineBalance implements StateMachine, StateMachinePersistabl
 
         BigDecimal newAmount = asset.availableAmount().subtract(withdrawnAmount);
         asset.availableAmount(newAmount);
+        UUID newVersion = new UUID(
+            withdrawn.getVersion().getNewLock().getUuidMsb(),
+            withdrawn.getVersion().getNewLock().getUuidLsb()
+        );
+        asset.versions().put(withdrawn.getVersion().getLockName(), newVersion);
         return new CommonResponse(StatusCode.SUCCESS.code, ResponseCode.BALANCE_WITHDRAW_SUCCESS.code);
     }
 
