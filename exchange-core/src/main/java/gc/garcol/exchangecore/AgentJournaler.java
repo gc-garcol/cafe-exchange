@@ -28,8 +28,8 @@ public class AgentJournaler extends ConsumerTemplate implements Agent
         return "Journaler";
     }
 
-    public void consume(final int msgTypeId, final MutableDirectBuffer buffer, final int index, final int length)
+    public boolean consume(final int msgTypeId, final MutableDirectBuffer buffer, final int index, final int length)
     {
-
+        return true;
     }
 }

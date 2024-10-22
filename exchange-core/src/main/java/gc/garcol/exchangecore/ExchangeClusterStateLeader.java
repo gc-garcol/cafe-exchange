@@ -1,5 +1,6 @@
 package gc.garcol.exchangecore;
 
+import gc.garcol.exchange.proto.CommandProto;
 import gc.garcol.exchangecore.common.ByteUtil;
 import gc.garcol.exchangecore.ringbuffer.ManyToManyRingBuffer;
 import gc.garcol.exchangecore.ringbuffer.OneToManyRingBuffer;
@@ -11,6 +12,7 @@ import org.agrona.concurrent.SleepingMillisIdleStrategy;
 import org.agrona.concurrent.ringbuffer.ManyToOneRingBuffer;
 
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
@@ -99,6 +101,7 @@ public class ExchangeClusterStateLeader implements ExchangeClusterState
         replayLogRunner.close();
     }
 
+    @Override
     public void handleHeartBeat()
     {
         var ringBuffer = exchangeCluster.heartBeatInboundRingBuffer;
@@ -120,5 +123,11 @@ public class ExchangeClusterStateLeader implements ExchangeClusterState
         {
             exchangeCluster.transitionToFollower();
         }
+    }
+
+    @Override
+    public boolean handleCommands(UUID sender, CommandProto.Command command)
+    {
+        return exchangeCluster.commandInboundRingBuffer.publishMessage(sender, command.toByteArray());
     }
 }

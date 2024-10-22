@@ -32,17 +32,19 @@ public class AgentReplayLogImmediate extends ConsumerTemplate implements Agent
         return "ReplayLog";
     }
 
-    public void consume(final int msgTypeId, final MutableDirectBuffer buffer, final int index, final int length)
+    public boolean consume(final int msgTypeId, final MutableDirectBuffer buffer, final int index, final int length)
     {
         try
         {
             byte[] command = new byte[length];
             buffer.getBytes(index, command);
             stateMachine.apply(CommandProto.Command.parseFrom(command));
+            return true;
         }
         catch (InvalidProtocolBufferException e)
         {
             log.error("Failed to parse command from log", e);
+            return false;
         }
     }
 }

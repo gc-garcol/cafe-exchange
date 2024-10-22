@@ -20,6 +20,8 @@ public class ExchangeCluster implements Agent
 {
     ExchangeClusterState state;
 
+    String currentLeader;
+
     AtomicBuffer commandAcceptorBuffer;
     AtomicBuffer commandBuffer;
 

@@ -101,7 +101,11 @@ public abstract class ConsumerTemplate implements Consumer
                 return ControlledMessageHandler.Action.ABORT;
             }
         }
-        consume(msgTypeId, buffer, index, length);
+        boolean consumedSuccess = consume(msgTypeId, buffer, index, length);
+        if (!consumedSuccess)
+        {
+            return ControlledMessageHandler.Action.ABORT;
+        }
 
         final int recordLength = length + RecordDescriptor.HEADER_LENGTH;
         final int alignedRecordLength = align(recordLength, ALIGNMENT);

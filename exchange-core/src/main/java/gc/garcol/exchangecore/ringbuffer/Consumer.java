@@ -14,5 +14,5 @@ public interface Consumer
 
     int poll(int limit);
 
-    void consume(final int msgTypeId, final MutableDirectBuffer buffer, final int index, final int length);
+    boolean consume(final int msgTypeId, final MutableDirectBuffer buffer, final int index, final int length);
 }
