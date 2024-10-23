@@ -4,7 +4,7 @@ option java_outer_classname = "BalanceProto";
 
 import "common.proto";
 
-message Asset {
+message BalanceAsset {
   string asset = 1; // USDT, BTC, ETH, ...
   BigDecimal availableAmount = 2;
   BigDecimal lockAmount = 3;
@@ -13,6 +13,6 @@ message Asset {
 
 message Balance {
   int64 ownerId = 1;
-  map<string, Asset> assets = 2;
+  map<string, BalanceAsset> assets = 2;
   OptimisticLock version = 3;
 }

@@ -1,5 +1,6 @@
 package gc.garcol.exchangecluster.configuration;
 
+import gc.garcol.exchangecore.StateMachineAsset;
 import gc.garcol.exchangecore.StateMachineBalance;
 import gc.garcol.exchangecore.StateMachineDelegate;
 import gc.garcol.exchangecore.StateMachineOrder;
@@ -24,6 +25,12 @@ public class StateMachineConfiguration
     public StateMachineOrder stateMachineOrder()
     {
         return new StateMachineOrder();
+    }
+
+    @Bean
+    public StateMachineAsset stateMachineAsset()
+    {
+        return new StateMachineAsset();
     }
 
     @Bean

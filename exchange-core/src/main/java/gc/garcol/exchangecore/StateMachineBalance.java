@@ -6,6 +6,7 @@ import gc.garcol.exchangecore.common.ResponseCode;
 import gc.garcol.exchangecore.common.StatusCode;
 import gc.garcol.exchangecore.domain.Asset;
 import gc.garcol.exchangecore.domain.Balance;
+import gc.garcol.exchangecore.domain.BalanceAsset;
 import gc.garcol.exchangecore.domain.CommonResponse;
 import org.agrona.collections.Long2ObjectHashMap;
 
@@ -21,7 +22,7 @@ import java.util.UUID;
 public class StateMachineBalance implements StateMachine, StateMachinePersistable
 {
 
-    Long2ObjectHashMap<Balance> balances;
+    Long2ObjectHashMap<Balance> balances = new Long2ObjectHashMap<>();
 
     public CommonResponse apply(final CommandProto.Command command)
     {
@@ -53,13 +54,24 @@ public class StateMachineBalance implements StateMachine, StateMachinePersistabl
         {
             return new CommonResponse(StatusCode.BAD_REQUEST.code, ResponseCode.BALANCE_NOT_FOUND.code);
         }
-        Asset asset = balance.assets().get(deposit.getAsset());
+
+        Asset asset = ExchangeIOC.SINGLETON.getInstance(StateMachineAsset.class).assets.get(deposit.getAsset());
         if (Objects.isNull(asset))
         {
             return new CommonResponse(StatusCode.BAD_REQUEST.code, ResponseCode.ASSET_NOT_FOUND.code);
         }
 
-        UUID currentVersion = asset.versions().get(deposit.getVersion().getLockName());
+        BalanceAsset balanceAsset = balance.assets().get(deposit.getAsset());
+        if (Objects.isNull(balanceAsset))
+        {
+            balanceAsset = new BalanceAsset()
+                .lockAmount(BigDecimal.ZERO)
+                .availableAmount(BigDecimal.ZERO)
+                .name(asset.name());
+            balance.assets().put(deposit.getAsset(), balanceAsset);
+        }
+
+        UUID currentVersion = balanceAsset.versions().get(deposit.getVersion().getLockName());
         UUID requestCurrentVersion = new UUID(
             deposit.getVersion().getCurrentLock().getUuidMsb(),
             deposit.getVersion().getCurrentLock().getUuidLsb()
@@ -72,9 +84,9 @@ public class StateMachineBalance implements StateMachine, StateMachinePersistabl
 
         BigDecimal depositAmount = new BigDecimal(
             deposit.getAmount().getValue().toString()
-        ).setScale(Asset.PRECISION, RoundingMode.HALF_UP);
-        BigDecimal newAmount = asset.availableAmount().add(depositAmount);
-        asset.availableAmount(newAmount);
+        ).setScale(asset.precision(), RoundingMode.HALF_UP);
+        BigDecimal newAmount = balanceAsset.availableAmount().add(depositAmount);
+        balanceAsset.availableAmount(newAmount);
         return new CommonResponse(StatusCode.SUCCESS.code, ResponseCode.BALANCE_DEPOSIT_SUCCESS.code);
     }
 
@@ -86,13 +98,20 @@ public class StateMachineBalance implements StateMachine, StateMachinePersistabl
         {
             return new CommonResponse(StatusCode.BAD_REQUEST.code, ResponseCode.BALANCE_NOT_FOUND.code);
         }
-        Asset asset = balance.assets().get(withdrawn.getAsset());
+
+        Asset asset = ExchangeIOC.SINGLETON.getInstance(StateMachineAsset.class).assets.get(withdrawn.getAsset());
         if (Objects.isNull(asset))
         {
             return new CommonResponse(StatusCode.BAD_REQUEST.code, ResponseCode.ASSET_NOT_FOUND.code);
         }
 
-        UUID currentVersion = asset.versions().get(withdrawn.getVersion().getLockName());
+        BalanceAsset balanceAsset = balance.assets().get(withdrawn.getAsset());
+        if (Objects.isNull(balanceAsset))
+        {
+            return new CommonResponse(StatusCode.BAD_REQUEST.code, ResponseCode.BALANCE_ASSET_NOT_FOUND.code);
+        }
+
+        UUID currentVersion = balanceAsset.versions().get(withdrawn.getVersion().getLockName());
         UUID requestCurrentVersion = new UUID(
             withdrawn.getVersion().getCurrentLock().getUuidMsb(),
             withdrawn.getVersion().getCurrentLock().getUuidLsb()
@@ -105,20 +124,20 @@ public class StateMachineBalance implements StateMachine, StateMachinePersistabl
 
         BigDecimal withdrawnAmount = new BigDecimal(
             withdrawn.getAmount().getValue().toString()
-        ).setScale(Asset.PRECISION, RoundingMode.HALF_UP);
+        ).setScale(asset.precision(), RoundingMode.HALF_UP);
 
-        if (withdrawnAmount.compareTo(asset.availableAmount()) < 0)
+        if (withdrawnAmount.compareTo(balanceAsset.availableAmount()) < 0)
         {
             return new CommonResponse(StatusCode.BAD_REQUEST.code, ResponseCode.BALANCE_WITHDRAW_FAILED_BALANCE_INSUFFICIENT.code);
         }
 
-        BigDecimal newAmount = asset.availableAmount().subtract(withdrawnAmount);
-        asset.availableAmount(newAmount);
+        BigDecimal newAmount = balanceAsset.availableAmount().subtract(withdrawnAmount);
+        balanceAsset.availableAmount(newAmount);
         UUID newVersion = new UUID(
             withdrawn.getVersion().getNewLock().getUuidMsb(),
             withdrawn.getVersion().getNewLock().getUuidLsb()
         );
-        asset.versions().put(withdrawn.getVersion().getLockName(), newVersion);
+        balanceAsset.versions().put(withdrawn.getVersion().getLockName(), newVersion);
         return new CommonResponse(StatusCode.SUCCESS.code, ResponseCode.BALANCE_WITHDRAW_SUCCESS.code);
     }
 

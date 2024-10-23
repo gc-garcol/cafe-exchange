@@ -4,6 +4,10 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.Accessors;
 
+import java.math.BigDecimal;
+import java.util.Map;
+import java.util.UUID;
+
 /**
  * @author thaivc
  * @since 2024
@@ -11,8 +15,10 @@ import lombok.experimental.Accessors;
 @Getter
 @Setter
 @Accessors(chain = true, fluent = true)
-public class Asset
+public class BalanceAsset
 {
     private String name;
-    private int precision;
+    private BigDecimal availableAmount;
+    private BigDecimal lockAmount;
+    private Map<String, UUID> versions;
 }
