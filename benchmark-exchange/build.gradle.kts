@@ -34,4 +34,8 @@ var dotenvVersion = "3.0.2"
 
 dependencies {
     implementation(project(":exchange-core"))
+
+    // JMH
+    implementation("org.openjdk.jmh:jmh-core:${jmhVersion}")
+    annotationProcessor("org.openjdk.jmh:jmh-generator-annprocess:${jmhVersion}")
 }

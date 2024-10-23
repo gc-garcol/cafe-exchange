@@ -38,3 +38,5 @@ out/
 .env
 
 **/data/**
+
+benchmark-result
