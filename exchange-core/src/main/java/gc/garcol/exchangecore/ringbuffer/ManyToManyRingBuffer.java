@@ -27,7 +27,7 @@ public class ManyToManyRingBuffer
             return false;
         }
         inboundRingBuffer.buffer().putLong(claimIndex, sender.getMostSignificantBits());
-        inboundRingBuffer.buffer().putLong(claimIndex + Long.BYTES, sender.getMostSignificantBits());
+        inboundRingBuffer.buffer().putLong(claimIndex + Long.BYTES, sender.getLeastSignificantBits());
         inboundRingBuffer.buffer().putBytes(claimIndex + Long.BYTES * 2, message);
         inboundRingBuffer.commit(claimIndex);
         return true;

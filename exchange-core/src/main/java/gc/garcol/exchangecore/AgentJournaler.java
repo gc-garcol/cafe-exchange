@@ -48,9 +48,9 @@ public class AgentJournaler extends ConsumerTemplate implements Agent
         {
             if (msgTypeId == ClusterConstant.COMMAND_MSG_TYPE)
             {
-                byte[] command = new byte[length];
-                buffer.getBytes(index, command);
-                ClusterPayloadProto.Request request = ClusterPayloadProto.Request.parseFrom(command);
+                byte[] message = new byte[length];
+                buffer.getBytes(index, message);
+                ClusterPayloadProto.Request request = ClusterPayloadProto.Request.parseFrom(message);
                 commandsBuilder.addCommands(request.getCommand());
             }
         }

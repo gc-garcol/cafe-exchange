@@ -10,6 +10,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.agrona.MutableDirectBuffer;
 import org.agrona.concurrent.Agent;
 
+import java.util.UUID;
+
 /**
  * Handle all commands, queries and event effecting to {@link StateMachine} and {@link ExchangeCluster}
  *
@@ -38,14 +40,15 @@ public class AgentDomainMessageHandler extends ConsumerTemplate implements Agent
     {
         try
         {
-            byte[] command = new byte[length];
-            buffer.getBytes(index, command);
-            ClusterPayloadProto.Request request = ClusterPayloadProto.Request.parseFrom(command);
+            byte[] message = new byte[length - Long.BYTES * 2];
+            buffer.getBytes(index + Long.BYTES * 2, message);
+            ClusterPayloadProto.Request request = ClusterPayloadProto.Request.parseFrom(message);
 
+            UUID sender = new UUID(buffer.getLong(index), buffer.getLong(index + Long.BYTES));
             switch (request.getPayloadCase())
             {
-                case COMMAND -> handleCommand(request.getCommand());
-                case QUERY -> handleQuery(request.getQuery());
+                case COMMAND -> handleCommand(sender, request.getCommand());
+                case QUERY -> handleQuery(sender, request.getQuery());
             }
         }
         catch (InvalidProtocolBufferException e)
@@ -55,13 +58,13 @@ public class AgentDomainMessageHandler extends ConsumerTemplate implements Agent
         return true;
     }
 
-    private void handleCommand(CommandProto.Command command)
+    private void handleCommand(UUID sender, CommandProto.Command command)
     {
         stateMachine.apply(command);
         // todo response
     }
 
-    private void handleQuery(QueryProto.Query query)
+    private void handleQuery(UUID sender, QueryProto.Query query)
     {
         // todo get data from stateMachine
     }
