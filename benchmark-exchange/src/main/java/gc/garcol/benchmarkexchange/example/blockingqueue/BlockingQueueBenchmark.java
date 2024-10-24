@@ -30,16 +30,6 @@ public class BlockingQueueBenchmark
         totalElapsedTime = new LongAccumulator(Long::sum, 0L);
     }
 
-    static class Message
-    {
-        final long timestamp;
-
-        public Message(long timestamp)
-        {
-            this.timestamp = timestamp;
-        }
-    }
-
     @Benchmark
     @Group("pushAndConsumeGroup")
     @GroupThreads(1)
@@ -69,5 +59,15 @@ public class BlockingQueueBenchmark
     public void tearDown()
     {
         queue.clear();
+    }
+
+    static class Message
+    {
+        final long timestamp;
+
+        public Message(long timestamp)
+        {
+            this.timestamp = timestamp;
+        }
     }
 }

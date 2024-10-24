@@ -25,16 +25,13 @@ public class ProducerSingle implements Producer
 {
     @Getter
     private final String roleName;
-
+    @Getter
+    private final AtomicPointer currentBarrier = new AtomicPointer();
     @Setter
     private OneToOneRingBuffer ringBuffer;
-
     @Getter
     @Setter
     private AtomicPointer lastConsumerBarrier;
-
-    @Getter
-    private final AtomicPointer currentBarrier = new AtomicPointer();
 
     @Override
     public boolean publish(int messageTypeId, byte[] message)
