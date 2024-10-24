@@ -29,7 +29,6 @@ public class ExchangeClusterStateLeader implements ExchangeClusterState
     private final AgentRunner commandInboundTransformerRunner;
     private final AgentRunner heartBeatRunner;
     private final AgentRunner journalerRunner;
-    private final AgentRunner replayLogRunner;
 
     public ExchangeClusterStateLeader(final ExchangeCluster cluster)
     {
@@ -37,7 +36,6 @@ public class ExchangeClusterStateLeader implements ExchangeClusterState
 
         var heartBeatAgent = new AgentHeartBeat("Try to keep leader role " + ClusterGlobal.NODE_ID);
         var journalerAgent = new AgentJournaler();
-        var replayLogAgent = new AgentRequestConsumer(ExchangeIOC.SINGLETON.getInstance(StateMachineDelegate.class));
 
         ByteUtil.eraseByteBuffer(exchangeCluster.requestAcceptorBuffer.byteBuffer());
         ByteUtil.eraseByteBuffer(exchangeCluster.requestBuffer.byteBuffer());
@@ -45,7 +43,7 @@ public class ExchangeClusterStateLeader implements ExchangeClusterState
         var manyToOneRingBuffer = new ManyToOneRingBuffer(exchangeCluster.requestAcceptorBuffer);
         var oneToManyRingBuffer = new OneToManyRingBuffer(
             exchangeCluster.requestBuffer,
-            List.of(journalerAgent, replayLogAgent)
+            List.of(journalerAgent, exchangeCluster.domainLogicConsumer)
         );
 
         exchangeCluster.requestRingBuffer = new ManyToManyRingBuffer(
@@ -69,13 +67,6 @@ public class ExchangeClusterStateLeader implements ExchangeClusterState
             journalerAgent
         );
 
-        this.replayLogRunner = new AgentRunner(
-            new SleepingIdleStrategy(),
-            error -> log.error("Leader replayLog error", error),
-            null,
-            replayLogAgent
-        );
-
         this.heartBeatRunner = new AgentRunner(
             new SleepingMillisIdleStrategy(50),
             error -> log.error("Leader heartBeat error", error),
@@ -90,7 +81,6 @@ public class ExchangeClusterStateLeader implements ExchangeClusterState
         AgentRunner.startOnThread(commandInboundTransformerRunner);
         AgentRunner.startOnThread(heartBeatRunner);
         AgentRunner.startOnThread(journalerRunner);
-        AgentRunner.startOnThread(replayLogRunner);
 
         ClusterGlobal.ENABLE_COMMAND_INBOUND.set(true);
     }
@@ -102,7 +92,6 @@ public class ExchangeClusterStateLeader implements ExchangeClusterState
         commandInboundTransformerRunner.close();
         heartBeatRunner.close();
         journalerRunner.close();
-        replayLogRunner.close();
     }
 
     @Override

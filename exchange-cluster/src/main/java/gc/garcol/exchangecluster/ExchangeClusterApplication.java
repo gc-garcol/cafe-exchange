@@ -1,7 +1,6 @@
 package gc.garcol.exchangecluster;
 
 import gc.garcol.exchangecore.BootstrapCluster;
-import gc.garcol.exchangecore.ExchangeCluster;
 import jakarta.annotation.PreDestroy;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -17,7 +16,6 @@ public class ExchangeClusterApplication
 {
 
     private final BootstrapCluster bootstrapCluster;
-    private final ExchangeCluster exchangeCluster;
 
     public static void main(String[] args)
     {

@@ -11,27 +11,27 @@ import org.agrona.MutableDirectBuffer;
 import org.agrona.concurrent.Agent;
 
 /**
- * Handle query and command in a single thread.
+ * Handle all commands, queries and event effecting to {@link StateMachine} and {@link ExchangeCluster}
  *
  * @author thaivc
  * @since 2024
  */
 @Slf4j
 @RequiredArgsConstructor
-public class AgentRequestConsumer extends ConsumerTemplate implements Agent
+public class AgentDomainMessageHandler extends ConsumerTemplate implements Agent
 {
-
-    private final StateMachine stateMachine;
+    private final ExchangeCluster exchangeCluster;
+    private StateMachineDelegate stateMachine;
 
     public int doWork() throws Exception
     {
+        exchangeCluster.state.handleHeartBeatEvent();
+        if (stateMachine == null)
+        {
+            stateMachine = ExchangeIOC.SINGLETON.getInstance(StateMachineDelegate.class);
+        }
         this.poll();
         return 0;
-    }
-
-    public String roleName()
-    {
-        return "ReplayLog";
     }
 
     public boolean consume(final int msgTypeId, final MutableDirectBuffer buffer, final int index, final int length)
@@ -64,5 +64,10 @@ public class AgentRequestConsumer extends ConsumerTemplate implements Agent
     private void handleQuery(QueryProto.Query query)
     {
         // todo get data from stateMachine
+    }
+
+    public String roleName()
+    {
+        return "DomainLogic";
     }
 }

@@ -1,11 +1,16 @@
 package gc.garcol.exchangecore.ringbuffer;
 
+import lombok.Getter;
+import lombok.experimental.Accessors;
+
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * @author thaivc
  * @since 2024
  */
+@Getter
+@Accessors(fluent = true)
 public class AtomicPointer
 {
 
@@ -26,7 +31,7 @@ public class AtomicPointer
         return pointer.get().length();
     }
 
-    record Pointer(
+    public record Pointer(
         boolean flip,
         int index,
         int length

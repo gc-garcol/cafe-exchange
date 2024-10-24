@@ -1,32 +1,26 @@
 package gc.garcol.exchangecore;
 
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.agrona.concurrent.AgentRunner;
-import org.agrona.concurrent.SleepingIdleStrategy;
 
 /**
  * @author thaivc
  * @since 2024
  */
 @Slf4j
+@RequiredArgsConstructor
 public class BootstrapCluster implements Bootstrap
 {
 
-    private AgentRunner exchangeClusterRunner;
+    private final ExchangeCluster exchangeCluster;
 
     public void start()
     {
-        exchangeClusterRunner = new AgentRunner(
-            new SleepingIdleStrategy(),
-            error -> log.error("Exchange cluster duty cycle error", error),
-            null,
-            ExchangeIOC.SINGLETON.getInstance(ExchangeCluster.class));
-
-        AgentRunner.startOnThread(exchangeClusterRunner);
+        exchangeCluster.onStart();
     }
 
     public void stop()
     {
-        exchangeClusterRunner.close();
+        exchangeCluster.stopAll();
     }
 }

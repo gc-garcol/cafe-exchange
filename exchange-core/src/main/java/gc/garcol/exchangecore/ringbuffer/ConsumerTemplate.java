@@ -20,7 +20,7 @@ import static org.agrona.concurrent.ringbuffer.RecordDescriptor.HEADER_LENGTH;
 public abstract class ConsumerTemplate implements Consumer
 {
     @Getter
-    private final AtomicPointer currentBarrier = new AtomicPointer();
+    protected final AtomicPointer currentBarrier = new AtomicPointer();
 
     @Getter
     @Setter

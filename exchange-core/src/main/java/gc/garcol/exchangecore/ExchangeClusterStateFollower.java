@@ -4,11 +4,15 @@ import gc.garcol.exchange.proto.ClusterPayloadProto;
 import gc.garcol.exchangecore.common.ByteUtil;
 import gc.garcol.exchangecore.common.ResponseCode;
 import gc.garcol.exchangecore.common.StatusCode;
+import gc.garcol.exchangecore.ringbuffer.ManyToManyRingBuffer;
+import gc.garcol.exchangecore.ringbuffer.OneToManyRingBuffer;
 import lombok.extern.slf4j.Slf4j;
 import org.agrona.concurrent.AgentRunner;
 import org.agrona.concurrent.ControlledMessageHandler;
 import org.agrona.concurrent.SleepingMillisIdleStrategy;
+import org.agrona.concurrent.ringbuffer.ManyToOneRingBuffer;
 
+import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -34,16 +38,16 @@ public class ExchangeClusterStateFollower implements ExchangeClusterState
         ByteUtil.eraseByteBuffer(exchangeCluster.requestAcceptorBuffer.byteBuffer());
         ByteUtil.eraseByteBuffer(exchangeCluster.requestBuffer.byteBuffer());
 
-//        var manyToOneRingBuffer = new ManyToOneRingBuffer(exchangeCluster.requestAcceptorBuffer);
-//        var oneToManyRingBuffer = new OneToManyRingBuffer(
-//            exchangeCluster.requestBuffer,
-//            List.of()
-//        );
-//
-//        exchangeCluster.requestRingBuffer = new ManyToManyRingBuffer(
-//            manyToOneRingBuffer,
-//            oneToManyRingBuffer
-//        );
+        var manyToOneRingBuffer = new ManyToOneRingBuffer(exchangeCluster.requestAcceptorBuffer);
+        var oneToManyRingBuffer = new OneToManyRingBuffer(
+            exchangeCluster.requestBuffer,
+            List.of(exchangeCluster.domainLogicConsumer)
+        );
+
+        exchangeCluster.requestRingBuffer = new ManyToManyRingBuffer(
+            manyToOneRingBuffer,
+            oneToManyRingBuffer
+        );
 
         this.replayLogRunner = new AgentRunner(
             new SleepingMillisIdleStrategy(),
