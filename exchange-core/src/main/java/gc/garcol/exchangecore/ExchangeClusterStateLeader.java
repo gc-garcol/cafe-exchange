@@ -13,8 +13,9 @@ import org.agrona.concurrent.SleepingMillisIdleStrategy;
 import org.agrona.concurrent.ringbuffer.ManyToOneRingBuffer;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * @author thaivc
@@ -118,22 +119,23 @@ public class ExchangeClusterStateLeader implements ExchangeClusterState
     {
         var ringBuffer = exchangeCluster.heartBeatInboundRingBuffer;
 
-        AtomicBoolean keepLeaderState = new AtomicBoolean(true);
+        AtomicReference<UUID> newLeaderNode = new AtomicReference<>();
         ringBuffer.controlledRead((messageType, buffer, offset, length) -> {
-            if (!keepLeaderState.get())
+            if (newLeaderNode.get() != null)
             {
                 return ControlledMessageHandler.Action.CONTINUE;
             }
-            boolean keepLeaderStateSuccess = buffer.getByte(offset) == 1;
+            UUID leaderNodeId = new UUID(buffer.getLong(offset), buffer.getLong(offset + Long.BYTES));
+            boolean keepLeaderStateSuccess = Objects.equals(leaderNodeId, ClusterGlobal.NODE_ID);
             if (!keepLeaderStateSuccess)
             {
-                keepLeaderState.set(false);
+                newLeaderNode.set(leaderNodeId);
             }
             return ControlledMessageHandler.Action.COMMIT;
         });
-        if (!keepLeaderState.get())
+        if (newLeaderNode.get() != null)
         {
-            exchangeCluster.transitionToFollower();
+            exchangeCluster.transitionToFollower(newLeaderNode.get());
         }
     }
 }

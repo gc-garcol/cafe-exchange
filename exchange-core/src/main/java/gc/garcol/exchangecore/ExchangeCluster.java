@@ -10,6 +10,7 @@ import org.agrona.concurrent.ringbuffer.OneToOneRingBuffer;
 import org.agrona.concurrent.ringbuffer.RingBufferDescriptor;
 
 import java.nio.ByteBuffer;
+import java.util.UUID;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
@@ -21,7 +22,7 @@ public class ExchangeCluster implements Agent
 {
     ExchangeClusterState state;
 
-    AtomicReference<String> currentLeader;
+    AtomicReference<UUID> currentLeader = new AtomicReference<>();
 
     AtomicBuffer requestAcceptorBuffer;
     AtomicBuffer requestBuffer;
@@ -47,7 +48,7 @@ public class ExchangeCluster implements Agent
 
     public void onStart()
     {
-        transitionToFollower();
+        transitionToFollower(null);
     }
 
     /**
@@ -70,25 +71,27 @@ public class ExchangeCluster implements Agent
         Agent.super.onClose();
     }
 
-    void enqueueHeartBeat(boolean success)
+    void enqueueHeartBeat(UUID leaderId)
     {
-        int claimIndex = heartBeatInboundRingBuffer.tryClaim(1, 1);
+        int claimIndex = heartBeatInboundRingBuffer.tryClaim(1, Long.BYTES * 2);
         if (claimIndex <= 0)
         {
             return;
         }
         final var buffer = heartBeatInboundRingBuffer.buffer();
-        buffer.putByte(claimIndex, (byte)(success ? 1 : 0));
+        buffer.putLong(claimIndex, leaderId.getMostSignificantBits());
+        buffer.putLong(claimIndex + Long.BYTES, leaderId.getLeastSignificantBits());
         heartBeatInboundRingBuffer.commit(claimIndex);
     }
 
-    void transitionToFollower()
+    void transitionToFollower(UUID leaderNode)
     {
         log.info("Transition to follower");
         if (state != null)
         {
             state.stop();
         }
+        currentLeader.set(leaderNode);
         state = new ExchangeClusterStateFollower(this);
         state.start();
     }
@@ -100,6 +103,7 @@ public class ExchangeCluster implements Agent
         {
             state.stop();
         }
+        currentLeader.set(ClusterGlobal.NODE_ID);
         state = new ExchangeClusterStateLeader(this);
         state.start();
     }

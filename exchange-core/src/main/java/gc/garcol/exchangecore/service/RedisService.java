@@ -17,22 +17,22 @@ public class RedisService
         if currentLeader == ARGV[1] then
             -- Renew the TTL if the instance is the current leader
             redis.call('PEXPIRE', KEYS[1], ARGV[2])
-            return 1  -- Return 1 if EXPIRE is called
+            return currentLeader  -- Return that nodeID if EXPIRE is called
         else
             -- Try to set the leader if the key does not exist
             local setResult = redis.call('SET', KEYS[1], ARGV[1], 'NX', 'EX', ARGV[2])
             if setResult then
-                return 0  -- Return 0 if SET is called
+                return ARGV[1]  -- Return new-leader if SET is called
             else
-                return -1  -- Optionally return -1 if SET failed (key already exists)
+                return currentLeader  -- Optionally return currentLeader if SET failed (key already exists)
             end
         end""";
     private final Jedis jedis;
 
-    public boolean acquireLeaderRole()
+    public String acquireLeaderRole()
     {
-        var evalResult = jedis.eval(LEADER_ELECTION, 1, Env.LEADER_KEY, ClusterGlobal.NODE_ID, Env.LEADER_TTL_MS + "");
-        return evalResult instanceof Long result && result > 0;
+        var evalResult = jedis.eval(LEADER_ELECTION, 1, Env.LEADER_KEY, ClusterGlobal.NODE_ID_STR, Env.LEADER_TTL_MS + "");
+        return (String)evalResult;
     }
 
     public String currentLeader()

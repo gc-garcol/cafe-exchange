@@ -6,6 +6,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.agrona.concurrent.Agent;
 
+import java.util.UUID;
+
 /**
  * @author thaivc
  * @since 2024
@@ -25,8 +27,8 @@ public class AgentHeartBeat implements Agent
         {
             log.debug(message);
             nextHeartBeatTime = System.currentTimeMillis() + Env.HEARTBEAT_INTERVAL_MS;
-            boolean success = ExchangeIOC.SINGLETON.getInstance(RedisService.class).acquireLeaderRole();
-            ExchangeIOC.SINGLETON.getInstance(ExchangeCluster.class).enqueueHeartBeat(success);
+            String currentLeader = ExchangeIOC.SINGLETON.getInstance(RedisService.class).acquireLeaderRole();
+            ExchangeIOC.SINGLETON.getInstance(ExchangeCluster.class).enqueueHeartBeat(UUID.fromString(currentLeader));
         }
         return 0;
     }

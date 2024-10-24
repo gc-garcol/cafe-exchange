@@ -13,7 +13,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class ClusterGlobal
 {
-    public static final String NODE_ID = UUID.randomUUID().toString();
+    public static final UUID NODE_ID = UUID.randomUUID();
+    public static final String NODE_ID_STR = NODE_ID.toString();
 
     public static final AtomicBoolean ENABLE_COMMAND_INBOUND = new AtomicBoolean(false);
 }
