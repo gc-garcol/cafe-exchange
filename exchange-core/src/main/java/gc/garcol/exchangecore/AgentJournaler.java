@@ -1,14 +1,16 @@
 package gc.garcol.exchangecore;
 
-import gc.garcol.exchange.proto.ClusterPayloadProto;
-import gc.garcol.exchange.proto.CommandProto;
 import gc.garcol.exchangecore.common.ClusterConstant;
 import gc.garcol.exchangecore.common.Env;
 import gc.garcol.exchangecore.ringbuffer.ConsumerTemplate;
+import lombok.Getter;
 import lombok.RequiredArgsConstructor;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.agrona.MutableDirectBuffer;
 import org.agrona.concurrent.Agent;
+
+import java.nio.ByteBuffer;
 
 /**
  * Journal request from {@link ExchangeCluster#requestAcceptorBuffer}
@@ -17,22 +19,26 @@ import org.agrona.concurrent.Agent;
  * @since 2024
  */
 @Slf4j
+@Getter
+@Setter
 @RequiredArgsConstructor
 public class AgentJournaler extends ConsumerTemplate implements Agent
 {
 
-    private CommandProto.Commands.Builder commandsBuilder;
+    ByteBuffer commandsBuilder = ByteBuffer.allocate(Env.BATCH_INSERT_SIZE * 256);
+    int messageCount;
+    int nextIndex;
 
     public int doWork() throws Exception
     {
-        commandsBuilder = CommandProto.Commands.newBuilder();
+        messageCount = 0;
+        nextIndex = Integer.BYTES;
+        commandsBuilder.clear();
         this.poll(Env.BATCH_INSERT_SIZE);
-        if (commandsBuilder.getCommandsCount() > 0)
+        if (messageCount > 0)
         {
-            CommandProto.Commands commands = commandsBuilder.build();
-
-            // todo journal
-            log.info("Journaling commands: {}", commands);
+            commandsBuilder.putInt(0, messageCount);
+            var messages = commandsBuilder.slice(0, nextIndex);
         }
         return 0;
     }
@@ -48,10 +54,13 @@ public class AgentJournaler extends ConsumerTemplate implements Agent
         {
             if (msgTypeId == ClusterConstant.COMMAND_MSG_TYPE)
             {
-                byte[] message = new byte[length];
-                buffer.getBytes(index, message);
-                ClusterPayloadProto.Request request = ClusterPayloadProto.Request.parseFrom(message);
-                commandsBuilder.addCommands(request.getCommand());
+                messageCount++;
+                int messageLength = length - Long.BYTES * 2;
+                byte[] message = new byte[messageLength];
+                buffer.getBytes(index + Long.BYTES * 2, message);
+                commandsBuilder.putInt(nextIndex, messageLength);
+                commandsBuilder.put(nextIndex + Integer.BYTES, message);
+                nextIndex = nextIndex + Integer.BYTES + messageLength;
             }
         }
         catch (Exception e)

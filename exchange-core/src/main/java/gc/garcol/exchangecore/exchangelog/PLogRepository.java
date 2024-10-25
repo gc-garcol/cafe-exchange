@@ -1,6 +1,5 @@
 package gc.garcol.exchangecore.exchangelog;
 
-import gc.garcol.exchange.proto.CommandProto;
 import gc.garcol.exchange.proto.MetadataProto;
 import gc.garcol.exchangecore.common.Env;
 import gc.garcol.exchangecore.common.InternalException;
@@ -26,7 +25,7 @@ public class PLogRepository
         logMetadata = readMetadata();
     }
 
-    public CommandProto.Commands read(long segment, long index)
+    public byte[] read(long segment, long index)
     {
         try (
             RandomAccessFile indexFile = new RandomAccessFile(LogUtil.indexName(segment), "r");
@@ -40,7 +39,7 @@ public class PLogRepository
             indexFile.seek(logIndex.index());
             var buffer = new byte[logIndex.entryLength()];
             indexFile.readFully(buffer);
-            return CommandProto.Commands.parseFrom(buffer);
+            return buffer;
         }
         catch (Exception e)
         {
@@ -49,7 +48,7 @@ public class PLogRepository
     }
 
     @SneakyThrows
-    public void write(CommandProto.Commands commands)
+    public void write(byte[] commands)
     {
         var segment = logMetadata.currentSegment();
         try (
@@ -62,11 +61,11 @@ public class PLogRepository
 
             var indexBuffer = ByteBuffer.allocate(ELogIndex.SIZE);
             indexBuffer.putLong(logFile.length());
-            indexBuffer.putInt(commands.getSerializedSize());
+            indexBuffer.putInt(commands.length);
             indexBuffer.flip();
 
             var offset = logFile.length();
-            var logBuffer = ByteBuffer.wrap(commands.toByteArray());
+            var logBuffer = ByteBuffer.wrap(commands);
             fileChannel.write(logBuffer, offset);
             indexChannel.write(indexBuffer);
             fileChannel.force(true);

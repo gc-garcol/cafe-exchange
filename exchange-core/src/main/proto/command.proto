@@ -14,7 +14,3 @@ message Command {
     CancelOptionOrder cancelOptionOrder = 5;
   }
 }
-
-message Commands {
-  repeated Command commands = 1;
-}
