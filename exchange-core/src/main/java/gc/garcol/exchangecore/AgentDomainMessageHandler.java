@@ -4,12 +4,14 @@ import com.google.protobuf.InvalidProtocolBufferException;
 import gc.garcol.exchange.proto.ClusterPayloadProto;
 import gc.garcol.exchange.proto.CommandProto;
 import gc.garcol.exchange.proto.QueryProto;
+import gc.garcol.exchangecore.common.Env;
 import gc.garcol.exchangecore.ringbuffer.ConsumerTemplate;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.agrona.MutableDirectBuffer;
 import org.agrona.concurrent.Agent;
 
+import java.nio.ByteBuffer;
 import java.util.UUID;
 
 /**
@@ -22,6 +24,7 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class AgentDomainMessageHandler extends ConsumerTemplate implements Agent
 {
+    private final ByteBuffer cachedBuffer = ByteBuffer.allocateDirect(Env.MAX_COMMAND_SIZE);
     private final ExchangeCluster exchangeCluster;
     private StateMachineDelegate stateMachine;
 
@@ -40,9 +43,9 @@ public class AgentDomainMessageHandler extends ConsumerTemplate implements Agent
     {
         try
         {
-            byte[] message = new byte[length - Long.BYTES * 2];
-            buffer.getBytes(index + Long.BYTES * 2, message);
-            ClusterPayloadProto.Request request = ClusterPayloadProto.Request.parseFrom(message);
+            cachedBuffer.clear();
+            buffer.getBytes(index + Long.BYTES * 2, cachedBuffer, length - Long.BYTES * 2);
+            ClusterPayloadProto.Request request = ClusterPayloadProto.Request.parseFrom(cachedBuffer);
 
             UUID sender = new UUID(buffer.getLong(index), buffer.getLong(index + Long.BYTES));
             switch (request.getPayloadCase())

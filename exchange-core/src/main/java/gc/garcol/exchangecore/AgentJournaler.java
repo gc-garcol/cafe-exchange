@@ -25,7 +25,8 @@ import java.nio.ByteBuffer;
 public class AgentJournaler extends ConsumerTemplate implements Agent
 {
 
-    ByteBuffer commandsBuilder = ByteBuffer.allocate(Env.BATCH_INSERT_SIZE * 256);
+    final ByteBuffer commandsBuilder = ByteBuffer.allocate(Env.BATCH_INSERT_SIZE * Env.MAX_COMMAND_SIZE);
+    final ByteBuffer cachedBuffer = ByteBuffer.allocate(Env.MAX_COMMAND_SIZE);
     int messageCount;
     int nextIndex;
 
@@ -56,10 +57,10 @@ public class AgentJournaler extends ConsumerTemplate implements Agent
             {
                 messageCount++;
                 int messageLength = length - Long.BYTES * 2;
-                byte[] message = new byte[messageLength];
-                buffer.getBytes(index + Long.BYTES * 2, message);
+                cachedBuffer.clear();
+                buffer.getBytes(index + Long.BYTES * 2, cachedBuffer, messageLength);
                 commandsBuilder.putInt(nextIndex, messageLength);
-                commandsBuilder.put(nextIndex + Integer.BYTES, message);
+                commandsBuilder.put(nextIndex + Integer.BYTES, cachedBuffer, 0, messageLength);
                 nextIndex = nextIndex + Integer.BYTES + messageLength;
             }
         }

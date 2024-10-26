@@ -37,6 +37,7 @@ public class PLogRepository
                 .index(logFile.readLong())
                 .entryLength(logFile.readInt());
             indexFile.seek(logIndex.index());
+            // todo using ByteBuffer
             var buffer = new byte[logIndex.entryLength()];
             indexFile.readFully(buffer);
             return buffer;
@@ -84,6 +85,7 @@ public class PLogRepository
                 writeMetadata(metadata);
                 return metadata;
             }
+            // todo using ByteBuffer
             var buffer = new byte[(int)metadataFile.length()];
             metadataFile.readFully(buffer);
             var data = MetadataProto.LogMetadata.parseFrom(buffer);

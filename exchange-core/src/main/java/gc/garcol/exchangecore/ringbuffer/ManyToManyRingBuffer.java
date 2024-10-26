@@ -5,6 +5,7 @@ import org.agrona.MutableDirectBuffer;
 import org.agrona.concurrent.ControlledMessageHandler;
 import org.agrona.concurrent.ringbuffer.ManyToOneRingBuffer;
 
+import java.nio.ByteBuffer;
 import java.util.UUID;
 
 /**
@@ -18,6 +19,7 @@ public class ManyToManyRingBuffer
 {
     private final ManyToOneRingBuffer inboundRingBuffer;
     private final OneToManyRingBuffer oneToManyRingBuffer;
+    private final ByteBuffer cachedBuffer = ByteBuffer.allocateDirect(1 << 10);
 
     public boolean publishMessage(int messageType, UUID sender, byte[] message)
     {
@@ -36,9 +38,9 @@ public class ManyToManyRingBuffer
     public void transfer()
     {
         inboundRingBuffer.controlledRead((int msgTypeId, MutableDirectBuffer buffer, int index, int length) -> {
-            byte[] message = new byte[length];
-            buffer.getBytes(index + Long.BYTES * 2, message);
-            boolean success = oneToManyRingBuffer.producer().publish(1, message);
+            cachedBuffer.clear();
+            buffer.getBytes(index, cachedBuffer, 0, length);
+            boolean success = oneToManyRingBuffer.producer().publish(1, cachedBuffer);
             return success ? ControlledMessageHandler.Action.CONTINUE : ControlledMessageHandler.Action.ABORT;
         });
     }

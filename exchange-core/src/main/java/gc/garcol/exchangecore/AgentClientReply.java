@@ -5,6 +5,8 @@ import lombok.RequiredArgsConstructor;
 import org.agrona.MutableDirectBuffer;
 import org.agrona.concurrent.Agent;
 
+import java.nio.ByteBuffer;
+
 /**
  * @author thaivc
  * @since 2024
@@ -14,6 +16,8 @@ public class AgentClientReply extends ConsumerTemplate implements Agent
 {
 
     private final ExchangeCluster exchangeCluster;
+
+    final ByteBuffer cachedBuffer = ByteBuffer.allocate(1 << 10);
 
     public int doWork() throws Exception
     {
@@ -33,9 +37,9 @@ public class AgentClientReply extends ConsumerTemplate implements Agent
         {
             return false;
         }
-        byte[] bytes = new byte[length];
-        buffer.getBytes(index, bytes);
-        exchangeCluster.responseRingBuffer.buffer().putBytes(claimIndex, bytes);
+        cachedBuffer.clear();
+        buffer.getBytes(index, cachedBuffer, length);
+        exchangeCluster.responseRingBuffer.buffer().putBytes(claimIndex, cachedBuffer, 0, length);
         exchangeCluster.responseRingBuffer.commit(claimIndex);
         return true;
     }

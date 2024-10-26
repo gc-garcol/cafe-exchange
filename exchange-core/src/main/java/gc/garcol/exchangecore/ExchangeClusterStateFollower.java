@@ -2,6 +2,7 @@ package gc.garcol.exchangecore;
 
 import gc.garcol.exchange.proto.ClusterPayloadProto;
 import gc.garcol.exchangecore.common.ByteUtil;
+import gc.garcol.exchangecore.common.ClusterConstant;
 import gc.garcol.exchangecore.common.ResponseCode;
 import gc.garcol.exchangecore.common.StatusCode;
 import gc.garcol.exchangecore.ringbuffer.ManyToManyRingBuffer;
@@ -80,8 +81,11 @@ public class ExchangeClusterStateFollower implements ExchangeClusterState
     @Override
     public boolean enqueueRequest(UUID sender, ClusterPayloadProto.Request request)
     {
+        int messageType = request.getPayloadCase() == ClusterPayloadProto.Request.PayloadCase.COMMAND
+            ? ClusterConstant.COMMAND_MSG_TYPE
+            : ClusterConstant.QUERY_MSG_TYPE;
         return exchangeCluster.requestRingBuffer
-            .publishMessage(1, sender, ClusterPayloadProto.CommonResponse
+            .publishMessage(messageType, sender, ClusterPayloadProto.CommonResponse
                 .newBuilder()
                 .setCode(StatusCode.BAD_REQUEST.code)
                 .setStatus(ResponseCode.FOLLOWER_CANNOT_HANDLE_REQUEST.code)

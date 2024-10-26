@@ -8,6 +8,8 @@ import org.agrona.concurrent.AtomicBuffer;
 import org.agrona.concurrent.ringbuffer.OneToOneRingBuffer;
 import org.agrona.concurrent.ringbuffer.RecordDescriptor;
 
+import java.nio.ByteBuffer;
+
 import static org.agrona.BitUtil.align;
 import static org.agrona.concurrent.ringbuffer.RecordDescriptor.ALIGNMENT;
 import static org.agrona.concurrent.ringbuffer.RecordDescriptor.HEADER_LENGTH;
@@ -34,7 +36,7 @@ public class ProducerSingle implements Producer
     private AtomicPointer lastConsumerBarrier;
 
     @Override
-    public boolean publish(int messageTypeId, byte[] message)
+    public boolean publish(int messageTypeId, ByteBuffer message)
     {
         boolean expectedFlip = false;
         int alignedRecordLength = 0;
@@ -43,7 +45,7 @@ public class ProducerSingle implements Producer
             /**
              * see {@link OneToOneRingBuffer#claimCapacity(AtomicBuffer, int)}
              */
-            final int recordLength = message.length + RecordDescriptor.HEADER_LENGTH;
+            final int recordLength = message.position() + RecordDescriptor.HEADER_LENGTH;
             alignedRecordLength = align(recordLength, ALIGNMENT);
             final int tailPositionIndex = ringBuffer.capacity() + TAIL_POSITION_OFFSET;
             final int mask = ringBuffer.capacity() - 1;
@@ -63,7 +65,7 @@ public class ProducerSingle implements Producer
             }
         }
 
-        final int claimIndex = ringBuffer.tryClaim(messageTypeId, message.length);
+        final int claimIndex = ringBuffer.tryClaim(messageTypeId, message.position());
         if (claimIndex <= 0)
         {
             return false;
@@ -73,7 +75,7 @@ public class ProducerSingle implements Producer
         {
             currentBarrier.pointer.set(new AtomicPointer.Pointer(expectedFlip, claimIndex - HEADER_LENGTH, alignedRecordLength));
         }
-        ringBuffer.buffer().putBytes(claimIndex, message);
+        ringBuffer.buffer().putBytes(claimIndex, message, 0, message.position());
         ringBuffer.commit(claimIndex);
         return true;
     }
