@@ -1,4 +1,4 @@
-package gc.garcol.exchangecore;
+package gc.garcol.exchangecore.common;
 
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;

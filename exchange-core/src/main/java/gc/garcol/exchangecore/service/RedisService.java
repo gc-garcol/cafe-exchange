@@ -1,6 +1,6 @@
 package gc.garcol.exchangecore.service;
 
-import gc.garcol.exchangecore.ClusterGlobal;
+import gc.garcol.exchangecore.common.ClusterGlobal;
 import gc.garcol.exchangecore.common.Env;
 import lombok.RequiredArgsConstructor;
 import redis.clients.jedis.Jedis;

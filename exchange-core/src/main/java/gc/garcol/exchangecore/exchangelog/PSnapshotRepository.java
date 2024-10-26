@@ -17,7 +17,6 @@ public class PSnapshotRepository
     {
         try (RandomAccessFile metadataFile = new RandomAccessFile(Env.SNAPSHOT_METADATA_FILE, "r"))
         {
-            // todo using ByteBuffer
             var buffer = new byte[(int)metadataFile.length()];
             metadataFile.readFully(buffer);
             var data = MetadataProto.SnapshotMetadata.parseFrom(buffer);

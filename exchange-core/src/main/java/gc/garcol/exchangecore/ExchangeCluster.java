@@ -1,5 +1,6 @@
 package gc.garcol.exchangecore;
 
+import gc.garcol.exchangecore.common.ClusterGlobal;
 import gc.garcol.exchangecore.common.Env;
 import gc.garcol.exchangecore.ringbuffer.AtomicPointer;
 import gc.garcol.exchangecore.ringbuffer.ManyToManyRingBuffer;
