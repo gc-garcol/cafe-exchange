@@ -21,7 +21,7 @@ message CommonResponse {
 
 message Response {
   oneof payload {
-    CommonResponse commandResponse = 1;
+    CommonResponse commonResponse = 1;
     QueryResponse queryResponse = 2;
   }
 }
