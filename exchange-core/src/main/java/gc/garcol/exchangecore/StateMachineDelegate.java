@@ -16,6 +16,7 @@ public class StateMachineDelegate implements StateMachine
 
     private final StateMachineBalance stateMachineBalance;
     private final StateMachineOrder stateMachineOrder;
+    private final StateMachineAsset stateMachineAsset;
 
     public CommonResponse apply(final CommandProto.Command command)
     {

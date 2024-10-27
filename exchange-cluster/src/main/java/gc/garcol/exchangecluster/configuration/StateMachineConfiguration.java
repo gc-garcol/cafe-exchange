@@ -36,9 +36,10 @@ public class StateMachineConfiguration
     @Bean
     public StateMachineDelegate stateMachineDelegate(
         StateMachineBalance stateMachineBalance,
-        StateMachineOrder stateMachineOrder
+        StateMachineOrder stateMachineOrder,
+        StateMachineAsset stateMachineAsset
     )
     {
-        return new StateMachineDelegate(stateMachineBalance, stateMachineOrder);
+        return new StateMachineDelegate(stateMachineBalance, stateMachineOrder, stateMachineAsset);
     }
 }
