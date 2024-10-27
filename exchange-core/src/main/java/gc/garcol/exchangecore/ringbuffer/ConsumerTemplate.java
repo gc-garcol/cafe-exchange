@@ -24,16 +24,16 @@ public abstract class ConsumerTemplate implements Consumer
 
     @Getter
     @Setter
-    private String roleName;
-    private AtomicPointer previousBarrier;
+    protected String roleName;
+    protected AtomicPointer previousBarrier;
 
     @Getter
     @Setter
-    private OneToOneRingBuffer ringBuffer;
+    protected OneToOneRingBuffer ringBuffer;
 
     @Getter
     @Setter
-    private OneToOneRingBufferReader ringBufferReader;
+    protected OneToOneRingBufferReader ringBufferReader;
 
     /**
      * Make this consumer to be secondary consumer of the ring buffer.

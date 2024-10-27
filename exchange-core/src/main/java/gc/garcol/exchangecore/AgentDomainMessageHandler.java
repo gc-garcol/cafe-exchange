@@ -5,6 +5,7 @@ import gc.garcol.exchange.proto.ClusterPayloadProto;
 import gc.garcol.exchange.proto.CommandProto;
 import gc.garcol.exchange.proto.QueryProto;
 import gc.garcol.exchangecore.common.Env;
+import gc.garcol.exchangecore.ringbuffer.AtomicPointer;
 import gc.garcol.exchangecore.ringbuffer.ConsumerTemplate;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -13,6 +14,7 @@ import org.agrona.concurrent.Agent;
 
 import java.nio.ByteBuffer;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Handle all commands, queries and event effecting to {@link StateMachine} and {@link ExchangeCluster}
@@ -24,12 +26,19 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class AgentDomainMessageHandler extends ConsumerTemplate implements Agent
 {
+
+    public static final AtomicBoolean IS_RUNNING = new AtomicBoolean(false);
+
     private final ByteBuffer cachedBuffer = ByteBuffer.allocateDirect(Env.MAX_COMMAND_SIZE);
     private final ExchangeCluster exchangeCluster;
     private StateMachineDelegate stateMachine;
 
     public int doWork() throws Exception
     {
+        if (!IS_RUNNING.get())
+        {
+            return 0;
+        }
         exchangeCluster.state.handleHeartBeatEvent();
         if (stateMachine == null)
         {
@@ -37,6 +46,15 @@ public class AgentDomainMessageHandler extends ConsumerTemplate implements Agent
         }
         this.poll();
         return 0;
+    }
+
+    public AgentDomainMessageHandler reset()
+    {
+        this.ringBuffer = null;
+        this.ringBufferReader = null;
+        this.previousBarrier = null;
+        this.currentBarrier.pointer().set(new AtomicPointer.Pointer(false, 0, 0));
+        return this;
     }
 
     public boolean consume(final int msgTypeId, final MutableDirectBuffer buffer, final int index, final int length)

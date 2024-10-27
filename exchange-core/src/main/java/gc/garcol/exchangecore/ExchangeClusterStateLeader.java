@@ -44,7 +44,7 @@ public class ExchangeClusterStateLeader implements ExchangeClusterState
         var manyToOneRingBuffer = new ManyToOneRingBuffer(exchangeCluster.requestAcceptorBuffer);
         var oneToManyRingBuffer = new OneToManyRingBuffer(
             exchangeCluster.requestBuffer,
-            List.of(journalerAgent, exchangeCluster.domainLogicConsumer)
+            List.of(journalerAgent, exchangeCluster.domainLogicConsumer.reset())
         );
 
         exchangeCluster.requestRingBuffer = new ManyToManyRingBuffer(

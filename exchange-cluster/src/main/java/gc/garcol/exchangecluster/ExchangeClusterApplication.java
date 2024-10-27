@@ -35,6 +35,7 @@ public class ExchangeClusterApplication
         }
         catch (Exception e)
         {
+            log.error("bootstrap exception", e);
             System.exit(2);
         }
     }

@@ -82,6 +82,7 @@ public class ExchangeCluster
 
     void transitionToFollower(UUID leaderNode)
     {
+        AgentDomainMessageHandler.IS_RUNNING.set(false);
         log.info("Transition to follower");
         if (state != null)
         {
@@ -91,10 +92,12 @@ public class ExchangeCluster
         currentLeader.set(leaderNode);
         state = new ExchangeClusterStateFollower(this);
         state.start();
+        AgentDomainMessageHandler.IS_RUNNING.set(true);
     }
 
     void transitionToLeader()
     {
+        AgentDomainMessageHandler.IS_RUNNING.set(false);
         log.info("Transition to leader");
         if (state != null)
         {
@@ -104,6 +107,7 @@ public class ExchangeCluster
         currentLeader.set(ClusterGlobal.NODE_ID);
         state = new ExchangeClusterStateLeader(this);
         state.start();
+        AgentDomainMessageHandler.IS_RUNNING.set(true);
     }
 
     void resetDomainLogicBarrier()

@@ -39,7 +39,7 @@ public class ExchangeClusterStateFollower implements ExchangeClusterState
         var manyToOneRingBuffer = new ManyToOneRingBuffer(exchangeCluster.requestAcceptorBuffer);
         var oneToManyRingBuffer = new OneToManyRingBuffer(
             exchangeCluster.requestBuffer,
-            List.of(exchangeCluster.domainLogicConsumer)
+            List.of(exchangeCluster.domainLogicConsumer.reset())
         );
 
         exchangeCluster.requestRingBuffer = new ManyToManyRingBuffer(
