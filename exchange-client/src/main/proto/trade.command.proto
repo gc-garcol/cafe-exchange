@@ -9,25 +9,27 @@ import "common.proto";
 
 // https://developers.binance.com/docs/derivatives/option/trade
 message NewOrder {
-  string symbol = 1; // Option trading pair, e.g BTC-200730-9000-C
-  OrderSide side = 2; // Buy/sell direction: SELL, BUY
-  OrderType type = 3; // Order Type: LIMIT(only support limit)
-  BigDecimal quantity = 4; // Order Quantity
-  int64 timestamp = 5;
-  BigDecimal price = 6; // Order Price
-  TimeInForce timeInForce = 7; // Time in force
-  bool reduceOnly = 8; // Reduce Only（Default false）
-  bool postOnly = 9; // Post Only（Default false）
-  ResponseType newOrderRespType = 10; // "ACK", "RESULT", Default "ACK"
-  string clientOrderId = 11; // A unique id among open orders. Automatically generated if not sent.
-  bool isMmp = 12; // is market maker protection order, true/false
-  int64 recvWindow = 13;
+  UUID correlationId = 1;
+  string symbol = 2; // Option trading pair, e.g BTC-200730-9000-C
+  OrderSide side = 3; // Buy/sell direction: SELL, BUY
+  OrderType type = 4; // Order Type: LIMIT(only support limit)
+  BigDecimal quantity = 5; // Order Quantity
+  int64 timestamp = 6;
+  BigDecimal price = 7; // Order Price
+  TimeInForce timeInForce = 8; // Time in force
+  bool reduceOnly = 9; // Reduce Only（Default false）
+  bool postOnly = 10; // Post Only（Default false）
+  ResponseType newOrderRespType = 11; // "ACK", "RESULT", Default "ACK"
+  string clientOrderId = 12; // A unique id among open orders. Automatically generated if not sent.
+  bool isMmp = 13; // is market maker protection order, true/false
+  int64 recvWindow = 14;
 }
 
 message NewOrderResponse {
+  UUID correlationId = 1;
   oneof response {
-    NewOrderAck ack = 1;
-    NewOrderReject reject = 2;
+    NewOrderAck ack = 2;
+    NewOrderReject reject = 3;
   }
 }
 
@@ -46,16 +48,17 @@ message NewOrderResponse {
 }
 */
 message NewOrderAck {
-  int64 orderId = 1;
-  string symbol = 2;
-  BigDecimal price = 3;
-  BigDecimal quantity = 4;
-  OrderSide side = 5;
-  OrderType type = 6;
-  int64 createDate = 7;
-  bool reduceOnly = 8;
-  bool postOnly = 9;
-  bool mmp = 10;
+  UUID correlationId = 1;
+  int64 orderId = 2;
+  string symbol = 3;
+  BigDecimal price = 4;
+  BigDecimal quantity = 5;
+  OrderSide side = 6;
+  OrderType type = 7;
+  int64 createDate = 8;
+  bool reduceOnly = 9;
+  bool postOnly = 10;
+  bool mmp = 11;
 }
 
 /*
@@ -84,37 +87,39 @@ message NewOrderAck {
 }
 */
 message NewOrderReject {
-  int64 orderId = 1;
-  string symbol = 2;
-  BigDecimal price = 3;
-  BigDecimal quantity = 4;
-  BigDecimal executedQty = 5;
-  BigDecimal fee = 6;
-  OrderSide side = 7;
-  OrderType type = 8;
-  TimeInForce timeInForce = 9;
-  bool reduceOnly = 10;
-  bool postOnly = 11;
-  int64 createTime = 12;
-  int64 updateTime = 13;
-  OrderStatus status = 14;
-  BigDecimal avgPrice = 15;
-  string clientOrderId = 16;
-  int32 priceScale = 17;
-  int32 quantityScale = 18;
-  OptionSide optionSide = 19;
-  string quoteAsset = 20;
-  bool mmp = 21;
+  UUID correlationId = 1;
+  int64 orderId = 2;
+  string symbol = 3;
+  BigDecimal price = 4;
+  BigDecimal quantity = 5;
+  BigDecimal executedQty = 6;
+  BigDecimal fee = 7;
+  OrderSide side = 8;
+  OrderType type = 9;
+  TimeInForce timeInForce = 10;
+  bool reduceOnly = 11;
+  bool postOnly = 12;
+  int64 createTime = 13;
+  int64 updateTime = 14;
+  OrderStatus status = 15;
+  BigDecimal avgPrice = 16;
+  string clientOrderId = 17;
+  int32 priceScale = 18;
+  int32 quantityScale = 19;
+  OptionSide optionSide = 20;
+  string quoteAsset = 21;
+  bool mmp = 22;
 }
 
 // https://developers.binance.com/docs/derivatives/option/trade/Cancel-Option-Order
 // At least one instance of orderId and clientOrderId must be sent.
 message CancelOptionOrder {
-  string symbol = 1; // Option trading pair, e.g BTC-200730-9000-C
-  int64 orderId = 2; // Order ID, e.g 4611875134427365377
-  string clientOrderId = 3; // User-defined order ID, e.g 10000
-  int64 recvWindow = 4;
-  int64 timestamp = 5;
+  UUID correlationId = 1;
+  string symbol = 2; // Option trading pair, e.g BTC-200730-9000-C
+  int64 orderId = 3; // Order ID, e.g 4611875134427365377
+  string clientOrderId = 4; // User-defined order ID, e.g 10000
+  int64 recvWindow = 5;
+  int64 timestamp = 6;
 }
 
 /*
@@ -144,26 +149,27 @@ message CancelOptionOrder {
 }
 */
 message CancelOrderResponse {
-  int64 orderId = 1;
-  string symbol = 2;
-  BigDecimal price = 3;
-  BigDecimal quantity = 4;
-  BigDecimal executedQty = 5;
-  BigDecimal fee = 6;
-  OrderSide side = 7;
-  OrderType type = 8;
-  TimeInForce timeInForce = 9;
-  bool reduceOnly = 10;
-  bool postOnly = 11;
-  int64 createDate = 12;
-  int64 updateTime = 13;
-  OrderStatus status = 14;
-  BigDecimal avgPrice = 15;
-  string source = 16;
-  string clientOrderId = 17;
-  int32 priceScale = 18;
-  int32 quantityScale = 19;
-  OptionSide optionSide = 20;
-  string quoteAsset = 21;
-  bool mmp = 22;
+  UUID correlationId = 1;
+  int64 orderId = 2;
+  string symbol = 3;
+  BigDecimal price = 4;
+  BigDecimal quantity = 5;
+  BigDecimal executedQty = 6;
+  BigDecimal fee = 7;
+  OrderSide side = 8;
+  OrderType type = 9;
+  TimeInForce timeInForce = 10;
+  bool reduceOnly = 11;
+  bool postOnly = 12;
+  int64 createDate = 13;
+  int64 updateTime = 14;
+  OrderStatus status = 15;
+  BigDecimal avgPrice = 16;
+  string source = 17;
+  string clientOrderId = 18;
+  int32 priceScale = 19;
+  int32 quantityScale = 20;
+  OptionSide optionSide = 21;
+  string quoteAsset = 22;
+  bool mmp = 23;
 }
