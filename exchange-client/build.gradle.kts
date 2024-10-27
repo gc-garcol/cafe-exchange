@@ -32,9 +32,12 @@ var jedisVersion = "5.2.0"
 var annotationsApiVersion = "6.0.53"
 var grpcVersion = "1.65.1"
 var protocVersion = "4.27.2"
+var swaggerUIVersion = "2.6.0"
 
 dependencies {
     implementation("org.springframework.boot:spring-boot-starter-web")
+    implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:${swaggerUIVersion}")
+
 
     compileOnly("org.projectlombok:lombok:${lombokVersion}")
     annotationProcessor("org.projectlombok:lombok:${lombokVersion}")
@@ -80,10 +83,10 @@ tasks {
     task("run-client", JavaExec::class) {
         group = "run"
         classpath = sourceSets.main.get().runtimeClasspath
-        mainClass.set("gc.garcol.exchangecluster.ExchangeClusterApplication")
+        mainClass.set("gc.garcol.exchangeclient.ExchangeClientApplication")
 
         // Get the port from command-line arguments or use a default value
-        val port = project.properties["port"]?.toString() ?: "8080"
+        val port = project.properties["port"]?.toString() ?: "8090"
         args = listOf("--server.port=$port")
     }
 }

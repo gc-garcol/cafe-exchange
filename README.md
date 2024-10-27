@@ -18,6 +18,12 @@ make run-cluster PORT=8081 GRPC_PORT=9501
 make run-cluster PORT=8082 GRPC_PORT=9502
 ```
 
+- Run client
+
+```shell
+./gradlew :exchange-client:run-client -Pport=8090
+```
+
 ## Schema reference
 
 - https://developers.binance.com/docs/derivatives/option/general-info

@@ -24,7 +24,8 @@ public class NetworkClusterService extends ClusterServiceGrpc.ClusterServiceImpl
     final Map<UUID, StreamObserver<ClusterPayloadProto.Response>> repliers = new ConcurrentHashMap<>();
     final ExchangeCluster exchangeCluster;
 
-    public StreamObserver<ClusterPayloadProto.Request> request(StreamObserver<ClusterPayloadProto.Response> responseObserver)
+    @Override
+    public StreamObserver<ClusterPayloadProto.Request> send(final StreamObserver<ClusterPayloadProto.Response> responseObserver)
     {
         var replyChannel = UUID.randomUUID();
         repliers.put(replyChannel, responseObserver);

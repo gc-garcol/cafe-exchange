@@ -1,0 +1,12 @@
+syntax = "proto3";
+package gc.garcol.exchange.proto;
+option java_outer_classname = "AssetProto";
+
+message Asset {
+  string name = 1;
+  string symbol = 2;
+}
+
+message Assets {
+  map<string, Asset> assets = 1;
+}

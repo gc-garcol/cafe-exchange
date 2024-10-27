@@ -5,6 +5,7 @@ import gc.garcol.exchangecluster.anotations.GRpcResource;
 import gc.garcol.exchangecore.NetworkClusterService;
 import io.grpc.Server;
 import io.grpc.ServerBuilder;
+import io.grpc.protobuf.services.ProtoReflectionService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -31,6 +32,7 @@ public class GRpcClusterNetworkResource
         log.info("GRpc server started on port {}", grpcPort);
         this.server = ServerBuilder.forPort(grpcPort)
             .addService(networkClusterService)
+            .addService(ProtoReflectionService.newInstance())
             .executor(MoreExecutors.directExecutor())
             .build();
     }
