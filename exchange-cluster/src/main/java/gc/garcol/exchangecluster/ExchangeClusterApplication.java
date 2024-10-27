@@ -1,5 +1,6 @@
 package gc.garcol.exchangecluster;
 
+import gc.garcol.exchangecluster.transport.GRpcClusterNetworkResource;
 import gc.garcol.exchangecore.BootstrapCluster;
 import jakarta.annotation.PreDestroy;
 import lombok.RequiredArgsConstructor;
@@ -16,6 +17,7 @@ public class ExchangeClusterApplication
 {
 
     private final BootstrapCluster bootstrapCluster;
+    private final GRpcClusterNetworkResource grpcClusterResource;
 
     public static void main(String[] args)
     {
@@ -25,14 +27,30 @@ public class ExchangeClusterApplication
     @EventListener(ApplicationReadyEvent.class)
     public void bootstrap()
     {
-        log.info("Application is ready to start.");
-        bootstrapCluster.start();
+        try
+        {
+            log.info("Application is ready to start.");
+            grpcClusterResource.start();
+            bootstrapCluster.start();
+        }
+        catch (Exception e)
+        {
+            System.exit(2);
+        }
     }
 
     @PreDestroy
     public void destroy()
     {
-        log.info("Application is going to stop.");
-        bootstrapCluster.stop();
+        try
+        {
+            log.info("Application is going to stop.");
+            bootstrapCluster.stop();
+            grpcClusterResource.stop();
+        }
+        catch (Exception e)
+        {
+            log.error("destroy exception", e);
+        }
     }
 }

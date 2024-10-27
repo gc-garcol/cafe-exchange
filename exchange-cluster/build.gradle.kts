@@ -1,3 +1,5 @@
+import com.google.protobuf.gradle.id
+
 plugins {
     java
     id("org.springframework.boot") version "3.3.4"
@@ -29,6 +31,10 @@ var agronaVersion = "1.23.1"
 var lombokVersion = "1.18.34"
 var jedisVersion = "5.2.0"
 
+var annotationsApiVersion = "6.0.53"
+var grpcVersion = "1.65.1"
+var protocVersion = "4.27.2"
+
 dependencies {
     implementation(project(":exchange-core"))
     implementation("org.springframework.boot:spring-boot-starter-web")
@@ -39,6 +45,14 @@ dependencies {
     annotationProcessor("org.projectlombok:lombok:${lombokVersion}")
 
     implementation("redis.clients:jedis:${jedisVersion}")
+
+    // GRpc
+    runtimeOnly("io.grpc:grpc-netty-shaded:${grpcVersion}")
+    implementation("io.grpc:grpc-services:${grpcVersion}")
+    implementation("io.grpc:grpc-protobuf:${grpcVersion}")
+    implementation("io.grpc:grpc-stub:${grpcVersion}")
+    compileOnly("org.apache.tomcat:annotations-api:${annotationsApiVersion}")
+    implementation("com.google.protobuf:protobuf-java-util:${protocVersion}")
 }
 
 tasks {
@@ -49,6 +63,36 @@ tasks {
 
         // Get the port from command-line arguments or use a default value
         val port = project.properties["port"]?.toString() ?: "8080"
-        args = listOf("--server.port=$port")
+        val grpcPort = project.properties["grpcport"]?.toString() ?: "9500"
+        args = listOf("--server.port=$port", "--grpc.port=$grpcPort")
+    }
+}
+
+sourceSets {
+    main {
+        java.srcDirs(
+            "src/main/java",
+            "build/generated/source/proto/main/java",
+            "build/generated/source/proto/main/grpc"
+        )
+    }
+}
+
+protobuf {
+    protoc {
+        // The artifact spec for the Protobuf Compiler
+        artifact = "com.google.protobuf:protoc:${protocVersion}"
+    }
+    plugins {
+        id("grpc") {
+            artifact = "io.grpc:protoc-gen-grpc-java:${grpcVersion}"
+        }
+    }
+    generateProtoTasks {
+        all().forEach { task ->
+            task.plugins {
+                id("grpc")
+            }
+        }
     }
 }

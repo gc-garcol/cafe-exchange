@@ -13,5 +13,6 @@ build: ## Build jar
 	./gradlew clean build
 
 PORT ?= 8080
+GRPC_PORT ?= 9500
 run-cluster: ## Run cluster
-	./gradlew :exchange-cluster:run-cluster -Pport=$(PORT)
+	./gradlew :exchange-cluster:run-cluster -Pport=$(PORT) -Pgrpcport=${GRPC_PORT}
