@@ -7,6 +7,7 @@ import gc.garcol.exchangecore.ringbuffer.OneToManyRingBuffer;
 import lombok.extern.slf4j.Slf4j;
 import org.agrona.concurrent.AgentRunner;
 import org.agrona.concurrent.ControlledMessageHandler;
+import org.agrona.concurrent.SleepingIdleStrategy;
 import org.agrona.concurrent.SleepingMillisIdleStrategy;
 import org.agrona.concurrent.ringbuffer.ManyToOneRingBuffer;
 
@@ -26,6 +27,7 @@ public class ExchangeClusterStateFollower implements ExchangeClusterState
 
     private final AgentRunner replayLogRunner;
     private final AgentRunner heartBeatRunner;
+    private final AgentRunner requestTransformerRunner;
 
     public ExchangeClusterStateFollower(final ExchangeCluster cluster)
     {
@@ -59,6 +61,16 @@ public class ExchangeClusterStateFollower implements ExchangeClusterState
             null,
             heartBeatAgent
         );
+
+        var agentCommandInboundTransformer = new AgentRequestTransformConsumer(exchangeCluster.requestRingBuffer);
+
+        this.requestTransformerRunner = new AgentRunner(
+            new SleepingIdleStrategy(),
+            error -> log.error("Leader commandInboundTransformer error", error),
+            null,
+            agentCommandInboundTransformer
+        );
+
     }
 
     @Override
@@ -66,11 +78,13 @@ public class ExchangeClusterStateFollower implements ExchangeClusterState
     {
         AgentRunner.startOnThread(heartBeatRunner);
         AgentRunner.startOnThread(replayLogRunner);
+        AgentRunner.startOnThread(requestTransformerRunner);
     }
 
     @Override
     public void stop()
     {
+        requestTransformerRunner.close();
         heartBeatRunner.close();
         replayLogRunner.close();
     }

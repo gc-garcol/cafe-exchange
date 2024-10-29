@@ -8,5 +8,5 @@ import java.nio.ByteBuffer;
  */
 public interface Producer
 {
-    boolean publish(int messageTypeId, ByteBuffer message);
+    boolean publish(int messageTypeId, ByteBuffer message, int length);
 }

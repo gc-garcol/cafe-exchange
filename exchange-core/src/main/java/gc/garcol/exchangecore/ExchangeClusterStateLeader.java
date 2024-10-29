@@ -27,7 +27,7 @@ public class ExchangeClusterStateLeader implements ExchangeClusterState
 {
     private final ExchangeCluster exchangeCluster;
 
-    private final AgentRunner commandInboundTransformerRunner;
+    private final AgentRunner requestTransformerRunner;
     private final AgentRunner heartBeatRunner;
     private final AgentRunner journalerRunner;
 
@@ -36,7 +36,7 @@ public class ExchangeClusterStateLeader implements ExchangeClusterState
         this.exchangeCluster = cluster;
 
         var heartBeatAgent = new AgentHeartBeat("Try to keep leader role " + ClusterGlobal.NODE_ID);
-        var journalerAgent = new AgentJournaler();
+        var journalerAgent = new AgentJournal();
 
         ByteUtil.eraseByteBuffer(exchangeCluster.requestAcceptorBuffer.byteBuffer());
         ByteUtil.eraseByteBuffer(exchangeCluster.requestBuffer.byteBuffer());
@@ -54,7 +54,7 @@ public class ExchangeClusterStateLeader implements ExchangeClusterState
 
         var agentCommandInboundTransformer = new AgentRequestTransformConsumer(exchangeCluster.requestRingBuffer);
 
-        this.commandInboundTransformerRunner = new AgentRunner(
+        this.requestTransformerRunner = new AgentRunner(
             new SleepingIdleStrategy(),
             error -> log.error("Leader commandInboundTransformer error", error),
             null,
@@ -79,7 +79,7 @@ public class ExchangeClusterStateLeader implements ExchangeClusterState
     @Override
     public void start()
     {
-        AgentRunner.startOnThread(commandInboundTransformerRunner);
+        AgentRunner.startOnThread(requestTransformerRunner);
         AgentRunner.startOnThread(heartBeatRunner);
         AgentRunner.startOnThread(journalerRunner);
 
@@ -90,7 +90,7 @@ public class ExchangeClusterStateLeader implements ExchangeClusterState
     public void stop()
     {
         ClusterGlobal.ENABLE_COMMAND_INBOUND.set(false);
-        commandInboundTransformerRunner.close();
+        requestTransformerRunner.close();
         heartBeatRunner.close();
         journalerRunner.close();
     }

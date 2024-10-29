@@ -112,4 +112,13 @@ public abstract class ConsumerTemplate implements Consumer
         currentBarrier.pointer.set(new AtomicPointer.Pointer(currentFlip, recordIndex, alignedRecordLength));
         return ControlledMessageHandler.Action.COMMIT;
     }
+
+    public ConsumerTemplate reset()
+    {
+        this.ringBuffer = null;
+        this.ringBufferReader = null;
+        this.previousBarrier = null;
+        this.currentBarrier.pointer().set(new AtomicPointer.Pointer(false, 0, 0));
+        return this;
+    }
 }

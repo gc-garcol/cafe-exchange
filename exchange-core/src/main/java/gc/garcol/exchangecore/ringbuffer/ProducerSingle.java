@@ -4,6 +4,7 @@ import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import lombok.experimental.Accessors;
+import lombok.extern.slf4j.Slf4j;
 import org.agrona.concurrent.AtomicBuffer;
 import org.agrona.concurrent.ringbuffer.OneToOneRingBuffer;
 import org.agrona.concurrent.ringbuffer.RecordDescriptor;
@@ -21,6 +22,7 @@ import static org.agrona.concurrent.ringbuffer.RingBufferDescriptor.TAIL_POSITIO
  * @author thaivc
  * @since 2024
  */
+@Slf4j
 @Accessors(fluent = true, chain = true)
 @RequiredArgsConstructor
 public class ProducerSingle implements Producer
@@ -36,7 +38,7 @@ public class ProducerSingle implements Producer
     private AtomicPointer lastConsumerBarrier;
 
     @Override
-    public boolean publish(int messageTypeId, ByteBuffer message)
+    public boolean publish(int messageTypeId, ByteBuffer message, int length)
     {
         boolean expectedFlip = false;
         int alignedRecordLength = 0;
@@ -45,7 +47,7 @@ public class ProducerSingle implements Producer
             /**
              * see {@link OneToOneRingBuffer#claimCapacity(AtomicBuffer, int)}
              */
-            final int recordLength = message.position() + RecordDescriptor.HEADER_LENGTH;
+            final int recordLength = length + RecordDescriptor.HEADER_LENGTH;
             alignedRecordLength = align(recordLength, ALIGNMENT);
             final int tailPositionIndex = ringBuffer.capacity() + TAIL_POSITION_OFFSET;
             final int mask = ringBuffer.capacity() - 1;
@@ -65,7 +67,7 @@ public class ProducerSingle implements Producer
             }
         }
 
-        final int claimIndex = ringBuffer.tryClaim(messageTypeId, message.position());
+        final int claimIndex = ringBuffer.tryClaim(messageTypeId, length);
         if (claimIndex <= 0)
         {
             return false;
@@ -75,7 +77,7 @@ public class ProducerSingle implements Producer
         {
             currentBarrier.pointer.set(new AtomicPointer.Pointer(expectedFlip, claimIndex - HEADER_LENGTH, alignedRecordLength));
         }
-        ringBuffer.buffer().putBytes(claimIndex, message, 0, message.position());
+        ringBuffer.buffer().putBytes(claimIndex, message, 0, length);
         ringBuffer.commit(claimIndex);
         return true;
     }

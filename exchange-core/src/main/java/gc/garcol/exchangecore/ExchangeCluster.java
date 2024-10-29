@@ -88,7 +88,6 @@ public class ExchangeCluster
         {
             state.stop();
         }
-        resetDomainLogicBarrier();
         currentLeader.set(leaderNode);
         state = new ExchangeClusterStateFollower(this);
         state.start();
@@ -103,19 +102,10 @@ public class ExchangeCluster
         {
             state.stop();
         }
-        resetDomainLogicBarrier();
         currentLeader.set(ClusterGlobal.NODE_ID);
         state = new ExchangeClusterStateLeader(this);
         state.start();
         AgentDomainMessageHandler.IS_RUNNING.set(true);
-    }
-
-    void resetDomainLogicBarrier()
-    {
-        domainLogicConsumer
-            .currentBarrier()
-            .pointer()
-            .set(new AtomicPointer.Pointer(false, 0, 0));
     }
 
     public void stopAll()

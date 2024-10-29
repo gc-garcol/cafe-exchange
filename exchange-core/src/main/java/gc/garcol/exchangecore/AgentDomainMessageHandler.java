@@ -5,7 +5,6 @@ import gc.garcol.exchange.proto.ClusterPayloadProto;
 import gc.garcol.exchange.proto.CommandProto;
 import gc.garcol.exchange.proto.QueryProto;
 import gc.garcol.exchangecore.common.Env;
-import gc.garcol.exchangecore.ringbuffer.AtomicPointer;
 import gc.garcol.exchangecore.ringbuffer.ConsumerTemplate;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -48,24 +47,17 @@ public class AgentDomainMessageHandler extends ConsumerTemplate implements Agent
         return 0;
     }
 
-    public AgentDomainMessageHandler reset()
-    {
-        this.ringBuffer = null;
-        this.ringBufferReader = null;
-        this.previousBarrier = null;
-        this.currentBarrier.pointer().set(new AtomicPointer.Pointer(false, 0, 0));
-        return this;
-    }
-
     public boolean consume(final int msgTypeId, final MutableDirectBuffer buffer, final int index, final int length)
     {
         try
         {
+            UUID sender = new UUID(buffer.getLong(index), buffer.getLong(index + Long.BYTES));
+
             cachedBuffer.clear();
             buffer.getBytes(index + Long.BYTES * 2, cachedBuffer, length - Long.BYTES * 2);
+            cachedBuffer.flip();
             ClusterPayloadProto.Request request = ClusterPayloadProto.Request.parseFrom(cachedBuffer);
 
-            UUID sender = new UUID(buffer.getLong(index), buffer.getLong(index + Long.BYTES));
             switch (request.getPayloadCase())
             {
                 case COMMAND -> handleCommand(sender, request.getCommand());
