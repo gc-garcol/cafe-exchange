@@ -3,6 +3,7 @@ package gc.garcol.exchangecore;
 import com.google.protobuf.InvalidProtocolBufferException;
 import gc.garcol.exchange.proto.ClusterPayloadProto;
 import gc.garcol.exchange.proto.CommandProto;
+import gc.garcol.exchange.proto.CommonProto;
 import gc.garcol.exchange.proto.QueryProto;
 import gc.garcol.exchangecore.common.Env;
 import gc.garcol.exchangecore.ringbuffer.ConsumerTemplate;
@@ -76,8 +77,10 @@ public class AgentDomainMessageHandler extends ConsumerTemplate implements Agent
 
     private void handleCommand(UUID sender, CommandProto.Command command)
     {
+        var correlationId = extractUUID(command);
         var result = stateMachine.apply(command);
         var commonResponse = ClusterPayloadProto.CommonResponse.newBuilder()
+            .setCorrelationId(correlationId)
             .setStatus(result.status())
             .setCode(result.code())
             .build();
@@ -94,6 +97,19 @@ public class AgentDomainMessageHandler extends ConsumerTemplate implements Agent
             // backpressure
             responseIdle.idle();
         }
+    }
+
+    private CommonProto.UUID extractUUID(CommandProto.Command command)
+    {
+        return switch (command.getPayloadCase())
+        {
+            case CREATEBALANCE -> command.getCreateBalance().getCorrelationId();
+            case DEPOSIT -> command.getDeposit().getCorrelationId();
+            case WITHDRAWN -> command.getWithdrawn().getCorrelationId();
+            case NEWORDER -> command.getNewOrder().getCorrelationId();
+            case CANCELOPTIONORDER -> command.getCancelOptionOrder().getCorrelationId();
+            case PAYLOAD_NOT_SET -> CommonProto.UUID.getDefaultInstance();
+        };
     }
 
     private void handleQuery(UUID sender, QueryProto.Query query)
