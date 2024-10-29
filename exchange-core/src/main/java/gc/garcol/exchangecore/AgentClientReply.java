@@ -1,27 +1,28 @@
 package gc.garcol.exchangecore;
 
-import gc.garcol.exchangecore.ringbuffer.ConsumerTemplate;
+import gc.garcol.exchange.proto.ClusterPayloadProto;
 import lombok.RequiredArgsConstructor;
+import lombok.SneakyThrows;
 import org.agrona.MutableDirectBuffer;
 import org.agrona.concurrent.Agent;
 
 import java.nio.ByteBuffer;
+import java.util.Optional;
+import java.util.UUID;
 
 /**
  * @author thaivc
  * @since 2024
  */
 @RequiredArgsConstructor
-public class AgentClientReply extends ConsumerTemplate implements Agent
+public class AgentClientReply implements Agent
 {
-
-    private final ExchangeCluster exchangeCluster;
-
     final ByteBuffer cachedBuffer = ByteBuffer.allocate(1 << 10);
+    final ExchangeCluster exchangeCluster;
 
     public int doWork() throws Exception
     {
-        this.poll();
+        exchangeCluster.responseRingBuffer.read(this::consume);
         return 0;
     }
 
@@ -32,15 +33,22 @@ public class AgentClientReply extends ConsumerTemplate implements Agent
 
     public boolean consume(final int msgTypeId, final MutableDirectBuffer buffer, final int index, final int length)
     {
-        var claimIndex = exchangeCluster.responseRingBuffer.tryClaim(1, length);
-        if (claimIndex <= 0)
-        {
-            return false;
-        }
+        NetworkClusterService networkClusterService = ExchangeIOC.SINGLETON.getInstance(NetworkClusterService.class);
+        UUID sender = new UUID(buffer.getLong(index), buffer.getLong(index + Long.BYTES));
+        Optional.ofNullable(networkClusterService.repliers.get(sender))
+            .ifPresent(responseStream -> {
+                var response = parse(buffer, index + Long.BYTES * 2, length - Long.BYTES * 2);
+                responseStream.onNext(response);
+            });
+        return true;
+    }
+
+    @SneakyThrows
+    private ClusterPayloadProto.Response parse(final MutableDirectBuffer buffer, final int index, final int length)
+    {
         cachedBuffer.clear();
         buffer.getBytes(index, cachedBuffer, length);
-        exchangeCluster.responseRingBuffer.buffer().putBytes(claimIndex, cachedBuffer, 0, length);
-        exchangeCluster.responseRingBuffer.commit(claimIndex);
-        return true;
+        cachedBuffer.flip();
+        return ClusterPayloadProto.Response.parseFrom(cachedBuffer);
     }
 }

@@ -10,6 +10,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.agrona.MutableDirectBuffer;
 import org.agrona.concurrent.Agent;
+import org.agrona.concurrent.IdleStrategy;
+import org.agrona.concurrent.SleepingMillisIdleStrategy;
 
 import java.nio.ByteBuffer;
 import java.util.UUID;
@@ -31,6 +33,7 @@ public class AgentDomainMessageHandler extends ConsumerTemplate implements Agent
     private final ByteBuffer cachedBuffer = ByteBuffer.allocateDirect(Env.MAX_COMMAND_SIZE);
     private final ExchangeCluster exchangeCluster;
     private StateMachineDelegate stateMachine;
+    private final IdleStrategy responseIdle = new SleepingMillisIdleStrategy(1);
 
     public int doWork() throws Exception
     {
@@ -73,8 +76,24 @@ public class AgentDomainMessageHandler extends ConsumerTemplate implements Agent
 
     private void handleCommand(UUID sender, CommandProto.Command command)
     {
-        stateMachine.apply(command);
-        // todo response
+        var result = stateMachine.apply(command);
+        var commonResponse = ClusterPayloadProto.CommonResponse.newBuilder()
+            .setStatus(result.status())
+            .setCode(result.code())
+            .build();
+        var response = ClusterPayloadProto.Response.newBuilder()
+            .setCommonResponse(commonResponse)
+            .build();
+        for (; ; )
+        {
+            boolean success = exchangeCluster.enqueueResponse(sender, response);
+            if (success)
+            {
+                break;
+            }
+            // backpressure
+            responseIdle.idle();
+        }
     }
 
     private void handleQuery(UUID sender, QueryProto.Query query)

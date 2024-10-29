@@ -1,8 +1,8 @@
 package gc.garcol.exchangecore;
 
+import gc.garcol.exchange.proto.ClusterPayloadProto;
 import gc.garcol.exchangecore.common.ClusterGlobal;
 import gc.garcol.exchangecore.common.Env;
-import gc.garcol.exchangecore.ringbuffer.AtomicPointer;
 import gc.garcol.exchangecore.ringbuffer.ManyToManyRingBuffer;
 import lombok.extern.slf4j.Slf4j;
 import org.agrona.concurrent.AgentRunner;
@@ -38,6 +38,9 @@ public class ExchangeCluster
     AgentDomainMessageHandler domainLogicConsumer;
     AgentRunner domainLogicRunner;
 
+    AgentClientReply clientReplyAgent;
+    AgentRunner clientReplyRunner;
+
     public ExchangeCluster()
     {
         requestAcceptorBuffer = new UnsafeBuffer(ByteBuffer.allocateDirect((1 << Env.BUFFER_SIZE_REQUEST_ACCEPTOR_POW) + RingBufferDescriptor.TRAILER_LENGTH));
@@ -59,12 +62,41 @@ public class ExchangeCluster
             domainLogicConsumer
         );
 
+        clientReplyAgent = new AgentClientReply(this);
+        clientReplyRunner = new AgentRunner(
+            new SleepingIdleStrategy(),
+            error -> log.error("Client reply error", error),
+            null,
+            clientReplyAgent
+        );
     }
 
     public void onStart()
     {
         transitionToFollower(null);
         AgentRunner.startOnThread(domainLogicRunner);
+        AgentRunner.startOnThread(clientReplyRunner);
+    }
+
+    public boolean enqueueRequest(UUID sender, ClusterPayloadProto.Request request)
+    {
+        return this.state.enqueueRequest(sender, request);
+    }
+
+    public boolean enqueueResponse(UUID sender, ClusterPayloadProto.Response response)
+    {
+        int claimIndex = responseRingBuffer.tryClaim(1, response.getSerializedSize() + Long.BYTES * 2);
+        if (claimIndex <= 0)
+        {
+            return false;
+        }
+
+        final var buffer = responseRingBuffer.buffer();
+        buffer.putLong(claimIndex, sender.getMostSignificantBits());
+        buffer.putLong(claimIndex + Long.BYTES, sender.getLeastSignificantBits());
+        buffer.putBytes(claimIndex + Long.BYTES * 2, response.toByteArray());
+        responseRingBuffer.commit(claimIndex);
+        return true;
     }
 
     void enqueueHeartBeat(UUID leaderId)
@@ -111,6 +143,9 @@ public class ExchangeCluster
     public void stopAll()
     {
         domainLogicRunner.close();
+        clientReplyRunner.close();
+        domainLogicRunner = null; // decrease ref-count
+        clientReplyRunner = null; // decrease ref-count
         if (state != null)
         {
             state.stop();

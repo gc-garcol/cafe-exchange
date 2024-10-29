@@ -41,9 +41,9 @@ public class StateMachineBalance implements StateMachine, StateMachinePersistabl
         if (!balances.containsKey(ownerId))
         {
             balances.put(ownerId, Balance.create(ownerId));
-            return new CommonResponse(StatusCode.BAD_REQUEST.code, ResponseCode.BALANCE_CREATED_FAILED.code);
+            return new CommonResponse(StatusCode.SUCCESS.code, ResponseCode.BALANCE_CREATED_SUCCESS.code);
         }
-        return new CommonResponse(StatusCode.SUCCESS.code, ResponseCode.BALANCE_CREATED_SUCCESS.code);
+        return new CommonResponse(StatusCode.BAD_REQUEST.code, ResponseCode.BALANCE_CREATED_FAILED.code);
     }
 
     private CommonResponse deposit(final BalanceCommandProto.Deposit deposit)

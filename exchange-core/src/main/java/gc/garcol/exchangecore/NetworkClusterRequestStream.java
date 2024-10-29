@@ -1,8 +1,6 @@
 package gc.garcol.exchangecore;
 
 import gc.garcol.exchange.proto.ClusterPayloadProto;
-import gc.garcol.exchangecore.common.ResponseCode;
-import gc.garcol.exchangecore.common.StatusCode;
 import io.grpc.stub.StreamObserver;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -25,16 +23,7 @@ public class NetworkClusterRequestStream implements StreamObserver<ClusterPayloa
     @Override
     public void onNext(final ClusterPayloadProto.Request request)
     {
-        boolean enqueueSuccess = exchangeCluster.state.enqueueRequest(replyChannel, request);
-        if (!enqueueSuccess)
-        {
-            responseObserver.onNext(ClusterPayloadProto.Response.newBuilder()
-                .setCommonResponse(ClusterPayloadProto.CommonResponse.newBuilder()
-                    .setCode(ResponseCode.CLUSTER_BUSY.code)
-                    .setStatus(StatusCode.SERVER_BUSY.code)
-                    .build())
-                .build());
-        }
+        exchangeCluster.enqueueRequest(replyChannel, request);
     }
 
     @Override

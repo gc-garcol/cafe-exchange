@@ -41,7 +41,7 @@ public class ManyToManyRingBuffer
     {
         inboundRingBuffer.controlledRead((int msgTypeId, MutableDirectBuffer buffer, int index, int length) -> {
             cachedBuffer.clear();
-            buffer.getBytes(index, cachedBuffer, 0, length);
+            buffer.getBytes(index, cachedBuffer, length);
             boolean success = oneToManyRingBuffer.producer().publish(msgTypeId, cachedBuffer, length);
             return success ? ControlledMessageHandler.Action.CONTINUE : ControlledMessageHandler.Action.ABORT;
         });

@@ -8,10 +8,11 @@ import java.nio.ByteBuffer;
  */
 public class ByteUtil
 {
+    final static byte[] zeros = new byte[1 << 10];  // Small zero-filled array
+
     public static void eraseByteBuffer(ByteBuffer buffer)
     {
         int length = buffer.capacity();
-        byte[] zeros = new byte[Math.min(length, 1024)];  // Small zero-filled array
         buffer.clear(); // Reset position and limit
         while (length > 0)
         {
