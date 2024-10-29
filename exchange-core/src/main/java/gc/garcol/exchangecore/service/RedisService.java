@@ -19,6 +19,11 @@ public class RedisService
             redis.call('PEXPIRE', KEYS[1], ARGV[2])
             return currentLeader  -- Return that nodeID if EXPIRE is called
         else
+            -- Delete the key if the TTL is too long (more than 10 seconds compared to default TTL)
+            local ttl = redis.call('PTTL', KEYS[1])
+            if ttl > tonumber(ARGV[2]) + 10000 then
+               redis.call('DEL', KEYS[1])
+            end
             -- Try to set the leader if the key does not exist
             local setResult = redis.call('SET', KEYS[1], ARGV[1], 'NX', 'EX', ARGV[2])
             if setResult then
