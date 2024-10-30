@@ -99,8 +99,13 @@ public class ClusterExchangeService
             }
         }
         responseFutures.put(correlationId, responseFuture); // todo fix this
-        requestStream.onNext(RequestMapper.toProto(correlationId, request));
+        send(correlationId, request);
         return responseFuture;
+    }
+
+    private synchronized void send(UUID correlationId, Request request)
+    {
+        requestStream.onNext(RequestMapper.toProto(correlationId, request));
     }
 
     private void connectCluster()
