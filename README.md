@@ -24,6 +24,8 @@ make run-cluster PORT=8082 GRPC_PORT=9502
 ./gradlew :exchange-client:run-client -Pport=8090
 ```
 
+Client Swagger: http://localhost:8090/swagger-ui/index.html
+
 ## Schema reference
 
 - https://developers.binance.com/docs/derivatives/option/general-info

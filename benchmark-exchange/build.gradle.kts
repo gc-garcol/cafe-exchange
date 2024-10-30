@@ -36,4 +36,11 @@ dependencies {
     // JMH
     implementation("org.openjdk.jmh:jmh-core:${jmhVersion}")
     annotationProcessor("org.openjdk.jmh:jmh-generator-annprocess:${jmhVersion}")
+
+    runtimeOnly("io.grpc:grpc-netty-shaded:${grpcVersion}")
+    implementation("io.grpc:grpc-services:${grpcVersion}")
+    implementation("io.grpc:grpc-protobuf:${grpcVersion}")
+    implementation("io.grpc:grpc-stub:${grpcVersion}")
+    compileOnly("org.apache.tomcat:annotations-api:${annotationsApiVersion}")
+    implementation("com.google.protobuf:protobuf-java-util:${protocVersion}")
 }

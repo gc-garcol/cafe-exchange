@@ -1,4 +1,4 @@
-package gc.garcol.exchangecore.common;
+package gc.garcol.exchangeclient.domain;
 
 import lombok.RequiredArgsConstructor;
 
@@ -7,9 +7,11 @@ import lombok.RequiredArgsConstructor;
  * @since 2024
  */
 @RequiredArgsConstructor
-public enum ResponseCode
+public enum MessageCode
 {
-
+    /**
+     * Due to cannot publish message into RingBuffer
+     */
     CLUSTER_BUSY(100),
 
     FOLLOWER_CANNOT_HANDLE_REQUEST(200),
@@ -32,4 +34,15 @@ public enum ResponseCode
 
     public final int code;
 
+    public static MessageCode of(int code)
+    {
+        for (MessageCode messageCode : values())
+        {
+            if (messageCode.code == code)
+            {
+                return messageCode;
+            }
+        }
+        return null;
+    }
 }

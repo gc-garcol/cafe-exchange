@@ -9,6 +9,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
@@ -40,9 +41,27 @@ public class ClusterExchangeService
     private StreamObserver<ClusterPayloadProto.Response> responseStream = new StreamObserver<>()
     {
 
-        public void onNext(final ClusterPayloadProto.Response value)
+        public void onNext(final ClusterPayloadProto.Response response)
         {
+            switch (response.getPayloadCase())
+            {
+                case COMMONRESPONSE ->
+                {
+                    ClusterPayloadProto.CommonResponse commonResponse = response.getCommonResponse();
 
+                    UUID correlationId = new UUID(
+                        commonResponse.getCorrelationId().getUuidMsb(),
+                        commonResponse.getCorrelationId().getUuidLsb()
+                    );
+
+                    Optional.ofNullable(responseFutures.remove(correlationId))
+                        .ifPresent(responseFuture -> responseFuture.complete(new CommonResponse(
+                            commonResponse.getStatus(),
+                            commonResponse.getCode(),
+                            MessageCode.of(commonResponse.getCode())
+                        )));
+                }
+            }
         }
 
         public void onError(final Throwable t)
@@ -58,18 +77,6 @@ public class ClusterExchangeService
         }
     };
 
-    private void connectCluster()
-    {
-        // todo: chose right leader
-        clusterServiceStub = ClusterServiceGrpc
-            .newStub(ManagedChannelBuilder.forAddress(grpcExchangeHosts[0], grpcExchangePorts[0])
-                .usePlaintext()
-                .build());
-
-        requestStream = clusterServiceStub.send(responseStream);
-        isClusterConnected.set(true);
-    }
-
     public CompletableFuture<Response> request(Request request)
     {
         UUID correlationId = UUID.randomUUID();
@@ -82,10 +89,29 @@ public class ClusterExchangeService
 
         if (!isClusterConnected.get())
         {
-            connectCluster();
+            synchronized (this)
+            {
+                if (!isClusterConnected.get())
+                {
+                    responseFutures.clear();
+                    connectCluster();
+                }
+            }
         }
-        responseFutures.put(correlationId, responseFuture);
-        requestStream.onNext(RequestMapper.toProto(request));
+        responseFutures.put(correlationId, responseFuture); // todo fix this
+        requestStream.onNext(RequestMapper.toProto(correlationId, request));
         return responseFuture;
+    }
+
+    private void connectCluster()
+    {
+        // todo: chose right leader
+        clusterServiceStub = ClusterServiceGrpc
+            .newStub(ManagedChannelBuilder.forAddress(grpcExchangeHosts[0], grpcExchangePorts[0])
+                .usePlaintext()
+                .build());
+
+        requestStream = clusterServiceStub.send(responseStream);
+        isClusterConnected.set(true);
     }
 }
