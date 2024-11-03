@@ -30,7 +30,6 @@ public class ExchangeClusterApplication
         try
         {
             log.info("Application is ready to start.");
-            grpcClusterResource.start();
             bootstrapCluster.start();
         }
         catch (Exception e)

@@ -79,16 +79,21 @@ public class ExchangeClusterStateLeader implements ExchangeClusterState
     @Override
     public void start()
     {
+
         AgentRunner.startOnThread(requestTransformerRunner);
         AgentRunner.startOnThread(heartBeatRunner);
         AgentRunner.startOnThread(journalerRunner);
 
+        var networkGRpc = ExchangeIOC.SINGLETON.getInstance(NetworkGrpc.class);
+        networkGRpc.start();
         ClusterGlobal.ENABLE_COMMAND_INBOUND.set(true);
     }
 
     @Override
     public void stop()
     {
+        var networkGRpc = ExchangeIOC.SINGLETON.getInstance(NetworkGrpc.class);
+        networkGRpc.stop();
         ClusterGlobal.ENABLE_COMMAND_INBOUND.set(false);
         requestTransformerRunner.close();
         heartBeatRunner.close();

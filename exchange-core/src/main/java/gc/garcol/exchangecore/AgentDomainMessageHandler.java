@@ -43,6 +43,12 @@ public class AgentDomainMessageHandler extends ConsumerTemplate implements Agent
             return 0;
         }
         exchangeCluster.state.handleHeartBeatEvent();
+
+        if (exchangeCluster.state instanceof ExchangeClusterStateFollower)
+        {
+            return 0;
+        }
+
         if (stateMachine == null)
         {
             stateMachine = ExchangeIOC.SINGLETON.getInstance(StateMachineDelegate.class);

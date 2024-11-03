@@ -129,7 +129,7 @@ public class ExchangeCluster
     void transitionToLeader()
     {
         AgentDomainMessageHandler.IS_RUNNING.set(false);
-        log.info("Transition to leader");
+        log.info("Transition to leader {}", ClusterGlobal.NODE_ID);
         if (state != null)
         {
             state.stop();

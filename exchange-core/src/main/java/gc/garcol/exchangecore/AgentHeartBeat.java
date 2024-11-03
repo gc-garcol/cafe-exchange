@@ -25,7 +25,6 @@ public class AgentHeartBeat implements Agent
     {
         if (nextHeartBeatTime < System.currentTimeMillis())
         {
-            log.debug(message);
             nextHeartBeatTime = System.currentTimeMillis() + Env.HEARTBEAT_INTERVAL_MS;
             String currentLeader = ExchangeIOC.SINGLETON.getInstance(RedisService.class).acquireLeaderRole();
             ExchangeIOC.SINGLETON.getInstance(ExchangeCluster.class).enqueueHeartBeat(UUID.fromString(currentLeader));
