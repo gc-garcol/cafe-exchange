@@ -6,7 +6,12 @@ package gc.garcol.exchangeclient.domain;
  */
 public record ResponseTimeout(
     int status,
-    int code
+    int code,
+    String message
 ) implements Response
 {
+    public ResponseTimeout(int status, int code)
+    {
+        this(status, code, "Timeout!!");
+    }
 }

@@ -82,7 +82,7 @@ public class ClusterExchangeService
         UUID correlationId = UUID.randomUUID();
         CompletableFuture<Response> responseFuture = new CompletableFuture<>();
         responseFuture.completeOnTimeout(
-            new ResponseTimeout(408, 408),
+            new ResponseTimeout(StatusCode.TIMEOUT.code, 408),
             timeoutMilliseconds,
             TimeUnit.MILLISECONDS
         ).thenAccept((response) -> responseFutures.remove(correlationId));
