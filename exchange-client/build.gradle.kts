@@ -27,6 +27,7 @@ repositories {
     mavenCentral()
 }
 
+var agronaVersion = "1.23.1"
 var lombokVersion = "1.18.34"
 var jedisVersion = "5.2.0"
 var annotationsApiVersion = "6.0.53"
@@ -38,6 +39,7 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-web")
     implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:${swaggerUIVersion}")
 
+    implementation("org.agrona:agrona:${agronaVersion}")
 
     compileOnly("org.projectlombok:lombok:${lombokVersion}")
     annotationProcessor("org.projectlombok:lombok:${lombokVersion}")

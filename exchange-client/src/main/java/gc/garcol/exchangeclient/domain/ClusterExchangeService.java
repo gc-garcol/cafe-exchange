@@ -5,15 +5,18 @@ import gc.garcol.exchange.proto.ClusterServiceGrpc;
 import io.grpc.ManagedChannelBuilder;
 import io.grpc.stub.StreamObserver;
 import lombok.extern.slf4j.Slf4j;
+import org.agrona.concurrent.Agent;
+import org.agrona.concurrent.AgentRunner;
+import org.agrona.concurrent.SleepingIdleStrategy;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+import javax.annotation.PostConstruct;
+import javax.annotation.PreDestroy;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
@@ -22,7 +25,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  */
 @Slf4j
 @Service
-public class ClusterExchangeService
+public class ClusterExchangeService implements Agent
 {
     @Value("${exchange.grpc.hosts}")
     private String[] grpcExchangeHosts;
@@ -35,6 +38,9 @@ public class ClusterExchangeService
 
     private final Map<UUID, CompletableFuture<Response>> responseFutures = new ConcurrentHashMap<>();
     private final AtomicBoolean isClusterConnected = new AtomicBoolean(false);
+
+    private AgentRunner requestConsumer;
+    private final BlockingQueue<RequestQueueItem> requestQueue = new LinkedBlockingQueue<>();
 
     private ClusterServiceGrpc.ClusterServiceStub clusterServiceStub;
     private StreamObserver<ClusterPayloadProto.Request> requestStream;
@@ -77,6 +83,24 @@ public class ClusterExchangeService
         }
     };
 
+    @PostConstruct
+    private void init()
+    {
+        requestConsumer = new AgentRunner(
+            new SleepingIdleStrategy(),
+            error -> log.error("ClusterExchangeService requestConsumer error", error),
+            null,
+            this
+        );
+        AgentRunner.startOnThread(requestConsumer);
+    }
+
+    @PreDestroy
+    private void destroy()
+    {
+        requestConsumer.close();
+    }
+
     public CompletableFuture<Response> request(Request request)
     {
         UUID correlationId = UUID.randomUUID();
@@ -98,12 +122,11 @@ public class ClusterExchangeService
                 }
             }
         }
-        responseFutures.put(correlationId, responseFuture);
-        send(correlationId, request);
+        requestQueue.add(new RequestQueueItem(correlationId, request, responseFuture));
         return responseFuture;
     }
 
-    private synchronized void send(UUID correlationId, Request request)
+    private void send(UUID correlationId, Request request)
     {
         requestStream.onNext(RequestMapper.toProto(correlationId, request));
     }
@@ -118,5 +141,21 @@ public class ClusterExchangeService
 
         requestStream = clusterServiceStub.send(responseStream);
         isClusterConnected.set(true);
+    }
+
+    public int doWork() throws Exception
+    {
+        RequestQueueItem item;
+        while ((item = requestQueue.poll()) != null)
+        {
+            responseFutures.put(item.correlationId(), item.responseFuture());
+            send(item.correlationId(), item.request());
+        }
+        return 0;
+    }
+
+    public String roleName()
+    {
+        return "Cluster exchange service";
     }
 }
