@@ -46,7 +46,6 @@ public class ExchangeClusterApplication
         {
             log.info("Application is going to stop.");
             bootstrapCluster.stop();
-            grpcClusterResource.stop();
         }
         catch (Exception e)
         {
