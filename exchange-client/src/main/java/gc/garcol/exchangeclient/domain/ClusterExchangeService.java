@@ -85,7 +85,7 @@ public class ClusterExchangeService
             new ResponseTimeout(408, 408),
             timeoutMilliseconds,
             TimeUnit.MILLISECONDS
-        );
+        ).thenAccept((response) -> responseFutures.remove(correlationId));
 
         if (!isClusterConnected.get())
         {
@@ -98,7 +98,7 @@ public class ClusterExchangeService
                 }
             }
         }
-        responseFutures.put(correlationId, responseFuture); // todo fix this
+        responseFutures.put(correlationId, responseFuture);
         send(correlationId, request);
         return responseFuture;
     }
