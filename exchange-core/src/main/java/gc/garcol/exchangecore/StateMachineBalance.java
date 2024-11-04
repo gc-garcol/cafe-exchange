@@ -71,22 +71,34 @@ public class StateMachineBalance implements StateMachine, StateMachinePersistabl
             balance.assets().put(deposit.getAsset(), balanceAsset);
         }
 
-        UUID currentVersion = balanceAsset.versions().get(deposit.getVersion().getLockName());
-        UUID requestCurrentVersion = new UUID(
-            deposit.getVersion().getCurrentLock().getUuidMsb(),
-            deposit.getVersion().getCurrentLock().getUuidLsb()
-        );
-
-        if (!Objects.equals(currentVersion, requestCurrentVersion))
+        if (deposit.hasVersion())
         {
-            return new CommonResponse(StatusCode.BAD_REQUEST.code, ResponseCode.MODIFIED_INSUFFICIENT_VERSION.code);
+            UUID currentVersion = balanceAsset.versions().get(deposit.getVersion().getLockName());
+            UUID requestCurrentVersion = new UUID(
+                deposit.getVersion().getCurrentLock().getUuidMsb(),
+                deposit.getVersion().getCurrentLock().getUuidLsb()
+            );
+
+            if (!Objects.equals(currentVersion, requestCurrentVersion))
+            {
+                return new CommonResponse(StatusCode.BAD_REQUEST.code, ResponseCode.MODIFIED_INSUFFICIENT_VERSION.code);
+            }
         }
 
         BigDecimal depositAmount = new BigDecimal(
-            deposit.getAmount().getValue().toString()
+            deposit.getAmount().getValue()
         ).setScale(asset.precision(), RoundingMode.HALF_UP);
         BigDecimal newAmount = balanceAsset.availableAmount().add(depositAmount);
         balanceAsset.availableAmount(newAmount);
+
+        if (deposit.hasVersion())
+        {
+            UUID newVersion = new UUID(
+                deposit.getVersion().getNewLock().getUuidMsb(),
+                deposit.getVersion().getNewLock().getUuidLsb()
+            );
+            balanceAsset.versions().put(deposit.getVersion().getLockName(), newVersion);
+        }
         return new CommonResponse(StatusCode.SUCCESS.code, ResponseCode.BALANCE_DEPOSIT_SUCCESS.code);
     }
 
@@ -111,19 +123,22 @@ public class StateMachineBalance implements StateMachine, StateMachinePersistabl
             return new CommonResponse(StatusCode.BAD_REQUEST.code, ResponseCode.BALANCE_ASSET_NOT_FOUND.code);
         }
 
-        UUID currentVersion = balanceAsset.versions().get(withdrawn.getVersion().getLockName());
-        UUID requestCurrentVersion = new UUID(
-            withdrawn.getVersion().getCurrentLock().getUuidMsb(),
-            withdrawn.getVersion().getCurrentLock().getUuidLsb()
-        );
-
-        if (!Objects.equals(currentVersion, requestCurrentVersion))
+        if (withdrawn.hasVersion())
         {
-            return new CommonResponse(StatusCode.BAD_REQUEST.code, ResponseCode.MODIFIED_INSUFFICIENT_VERSION.code);
+            UUID currentVersion = balanceAsset.versions().get(withdrawn.getVersion().getLockName());
+            UUID requestCurrentVersion = new UUID(
+                withdrawn.getVersion().getCurrentLock().getUuidMsb(),
+                withdrawn.getVersion().getCurrentLock().getUuidLsb()
+            );
+
+            if (!Objects.equals(currentVersion, requestCurrentVersion))
+            {
+                return new CommonResponse(StatusCode.BAD_REQUEST.code, ResponseCode.MODIFIED_INSUFFICIENT_VERSION.code);
+            }
         }
 
         BigDecimal withdrawnAmount = new BigDecimal(
-            withdrawn.getAmount().getValue().toString()
+            withdrawn.getAmount().getValue()
         ).setScale(asset.precision(), RoundingMode.HALF_UP);
 
         if (withdrawnAmount.compareTo(balanceAsset.availableAmount()) < 0)
@@ -133,11 +148,15 @@ public class StateMachineBalance implements StateMachine, StateMachinePersistabl
 
         BigDecimal newAmount = balanceAsset.availableAmount().subtract(withdrawnAmount);
         balanceAsset.availableAmount(newAmount);
-        UUID newVersion = new UUID(
-            withdrawn.getVersion().getNewLock().getUuidMsb(),
-            withdrawn.getVersion().getNewLock().getUuidLsb()
-        );
-        balanceAsset.versions().put(withdrawn.getVersion().getLockName(), newVersion);
+
+        if (withdrawn.hasVersion())
+        {
+            UUID newVersion = new UUID(
+                withdrawn.getVersion().getNewLock().getUuidMsb(),
+                withdrawn.getVersion().getNewLock().getUuidLsb()
+            );
+            balanceAsset.versions().put(withdrawn.getVersion().getLockName(), newVersion);
+        }
         return new CommonResponse(StatusCode.SUCCESS.code, ResponseCode.BALANCE_WITHDRAW_SUCCESS.code);
     }
 

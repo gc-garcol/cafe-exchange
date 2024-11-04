@@ -14,7 +14,7 @@ message Deposit {
   int64 ownerId = 2;
   string asset = 3;
   BigDecimal amount = 4;
-  LockVersion version = 5;
+  optional LockVersion version = 5;
 }
 
 message Withdrawn {
@@ -22,5 +22,5 @@ message Withdrawn {
   int64 ownerId = 2;
   string asset = 3;
   BigDecimal amount = 4;
-  LockVersion version = 5;
+  optional LockVersion version = 5;
 }
