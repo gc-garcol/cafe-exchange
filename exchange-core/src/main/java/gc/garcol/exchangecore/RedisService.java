@@ -1,4 +1,4 @@
-package gc.garcol.exchangecore.service;
+package gc.garcol.exchangecore;
 
 import gc.garcol.exchangecore.common.ClusterGlobal;
 import gc.garcol.exchangecore.common.Env;

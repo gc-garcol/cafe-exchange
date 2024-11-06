@@ -1,8 +1,10 @@
 package gc.garcol.exchangecore;
 
 import gc.garcol.exchange.proto.CommandProto;
-import gc.garcol.exchangecore.common.ResponseCode;
+import gc.garcol.exchange.proto.QueryProto;
+import gc.garcol.exchangecore.common.MessageCode;
 import gc.garcol.exchangecore.common.StatusCode;
+import gc.garcol.exchangecore.domain.ClusterResponse;
 import gc.garcol.exchangecore.domain.CommonResponse;
 import lombok.RequiredArgsConstructor;
 
@@ -24,7 +26,16 @@ public class StateMachineDelegate implements StateMachine
         {
             case CREATEBALANCE, WITHDRAWN, DEPOSIT -> stateMachineBalance.apply(command);
             case NEWORDER, CANCELOPTIONORDER -> stateMachineOrder.apply(command);
-            default -> new CommonResponse(StatusCode.BAD_REQUEST.code, ResponseCode.COMMAND_TYPE_NOT_FOUND.code);
+            default -> new CommonResponse(StatusCode.BAD_REQUEST.code, MessageCode.COMMAND_TYPE_NOT_FOUND.code);
+        };
+    }
+
+    public ClusterResponse query(final QueryProto.Query query)
+    {
+        return switch (query.getPayloadCase())
+        {
+            case BALANCEQUERY -> stateMachineBalance.balance(query.getBalanceQuery().getOwnerId());
+            default -> new CommonResponse(StatusCode.BAD_REQUEST.code, MessageCode.QUERY_TYPE_NOT_FOUND.code);
         };
     }
 }

@@ -6,6 +6,7 @@ import gc.garcol.exchange.proto.CommandProto;
 import gc.garcol.exchange.proto.CommonProto;
 import gc.garcol.exchange.proto.QueryProto;
 import gc.garcol.exchangecore.common.Env;
+import gc.garcol.exchangecore.domain.ClusterResponseMapper;
 import gc.garcol.exchangecore.ringbuffer.ConsumerTemplate;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -70,8 +71,8 @@ public class AgentDomainMessageHandler extends ConsumerTemplate implements Agent
 
             switch (request.getPayloadCase())
             {
-                case COMMAND -> handleCommand(sender, request.getCommand());
-                case QUERY -> handleQuery(sender, request.getQuery());
+                case COMMAND -> handleCommand(sender, request.getCorrelationId(), request.getCommand());
+                case QUERY -> handleQuery(sender, request.getCorrelationId(), request.getQuery());
             }
         }
         catch (InvalidProtocolBufferException e)
@@ -81,18 +82,22 @@ public class AgentDomainMessageHandler extends ConsumerTemplate implements Agent
         return true;
     }
 
-    private void handleCommand(UUID sender, CommandProto.Command command)
+    private void handleCommand(UUID sender, CommonProto.UUID correlationId, CommandProto.Command command)
     {
-        var correlationId = extractUUID(command);
         var result = stateMachine.apply(command);
         var commonResponse = ClusterPayloadProto.CommonResponse.newBuilder()
-            .setCorrelationId(correlationId)
             .setStatus(result.status())
             .setCode(result.code())
             .build();
-        var response = ClusterPayloadProto.Response.newBuilder()
+        var grpcResponse = ClusterPayloadProto.Response.newBuilder()
+            .setCorrelationId(correlationId)
             .setCommonResponse(commonResponse)
             .build();
+        enqueueResponse(sender, grpcResponse);
+    }
+
+    private void enqueueResponse(UUID sender, ClusterPayloadProto.Response response)
+    {
         for (; ; )
         {
             boolean success = exchangeCluster.enqueueResponse(sender, response);
@@ -105,22 +110,11 @@ public class AgentDomainMessageHandler extends ConsumerTemplate implements Agent
         }
     }
 
-    private CommonProto.UUID extractUUID(CommandProto.Command command)
+    private void handleQuery(UUID sender, CommonProto.UUID correlationId, QueryProto.Query query)
     {
-        return switch (command.getPayloadCase())
-        {
-            case CREATEBALANCE -> command.getCreateBalance().getCorrelationId();
-            case DEPOSIT -> command.getDeposit().getCorrelationId();
-            case WITHDRAWN -> command.getWithdrawn().getCorrelationId();
-            case NEWORDER -> command.getNewOrder().getCorrelationId();
-            case CANCELOPTIONORDER -> command.getCancelOptionOrder().getCorrelationId();
-            case PAYLOAD_NOT_SET -> CommonProto.UUID.getDefaultInstance();
-        };
-    }
-
-    private void handleQuery(UUID sender, QueryProto.Query query)
-    {
-        // todo get data from stateMachine
+        var clusterResponse = stateMachine.query(query);
+        var grpcResponse = ClusterResponseMapper.toProto(correlationId, clusterResponse);
+        enqueueResponse(sender, grpcResponse);
     }
 
     public String roleName()

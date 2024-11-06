@@ -98,7 +98,7 @@ public class ExchangeClusterStateFollower implements ExchangeClusterState
             .publishMessage(messageType, sender, ClusterPayloadProto.CommonResponse
                 .newBuilder()
                 .setCode(StatusCode.BAD_REQUEST.code)
-                .setStatus(ResponseCode.FOLLOWER_CANNOT_HANDLE_REQUEST.code)
+                .setStatus(MessageCode.FOLLOWER_CANNOT_HANDLE_REQUEST.code)
                 .build().toByteArray());
     }
 

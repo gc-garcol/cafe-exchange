@@ -1,7 +1,6 @@
 package gc.garcol.exchangecore;
 
 import gc.garcol.exchangecore.common.Env;
-import gc.garcol.exchangecore.service.RedisService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.agrona.concurrent.Agent;

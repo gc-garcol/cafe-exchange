@@ -2,6 +2,7 @@ syntax = "proto3";
 package gc.garcol.exchange.proto;
 option java_outer_classname = "CommandProto";
 
+import "common.proto";
 import "trade.command.proto";
 import "balance.command.proto";
 

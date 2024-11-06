@@ -1,13 +1,14 @@
 package gc.garcol.exchangeclient.domain;
 
+import com.fasterxml.jackson.databind.JsonNode;
+
 /**
  * @author thaivc
  * @since 2024
  */
-public record CommonResponse(
+public record QueryResponse(
     int status,
-    int code,
-    String messageCode
+    JsonNode data
 ) implements Response
 {
 }

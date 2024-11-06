@@ -7,14 +7,16 @@ import lombok.RequiredArgsConstructor;
  * @since 2024
  */
 @RequiredArgsConstructor
-public enum ResponseCode
+public enum MessageCode
 {
 
     CLUSTER_BUSY(100),
 
     FOLLOWER_CANNOT_HANDLE_REQUEST(200),
 
-    COMMAND_TYPE_NOT_FOUND(1_000),
+    REQUEST_TYPE_NOT_FOUND(1_000),
+    COMMAND_TYPE_NOT_FOUND(1_001),
+    QUERY_TYPE_NOT_FOUND(1_002),
 
     MODIFIED_INSUFFICIENT_VERSION(2_000),
 

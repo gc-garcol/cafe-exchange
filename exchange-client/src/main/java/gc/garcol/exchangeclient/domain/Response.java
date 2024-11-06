@@ -7,6 +7,4 @@ package gc.garcol.exchangeclient.domain;
 public interface Response
 {
     int status();
-
-    int code();
 }

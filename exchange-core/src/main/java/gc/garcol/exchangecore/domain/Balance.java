@@ -19,7 +19,7 @@ import java.util.UUID;
 @Accessors(chain = true, fluent = true)
 @NoArgsConstructor
 @AllArgsConstructor
-public class Balance
+public class Balance implements ClusterResponse
 {
     private long ownerId;
     private Map<String, BalanceAsset> assets;

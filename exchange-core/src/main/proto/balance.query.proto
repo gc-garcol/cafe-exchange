@@ -6,11 +6,9 @@ import "common.proto";
 import "balance.proto";
 
 message BalanceQuery {
-  UUID correlationId = 1;
-  int64 ownerId = 2;
+  int64 ownerId = 1;
 }
 
 message BalanceQueryResponse {
-  UUID correlationId = 1;
-  Balance balance = 2;
+  Balance balance = 1;
 }

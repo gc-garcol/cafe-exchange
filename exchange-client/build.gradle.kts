@@ -33,6 +33,7 @@ var jedisVersion = "5.2.0"
 var annotationsApiVersion = "6.0.53"
 var grpcVersion = "1.65.1"
 var protocVersion = "4.27.2"
+var grpcUtilVersion = "4.28.3"
 var swaggerUIVersion = "2.6.0"
 
 dependencies {
@@ -43,6 +44,8 @@ dependencies {
 
     compileOnly("org.projectlombok:lombok:${lombokVersion}")
     annotationProcessor("org.projectlombok:lombok:${lombokVersion}")
+
+    implementation("com.google.protobuf:protobuf-java-util:${grpcUtilVersion}")
 
     runtimeOnly("io.grpc:grpc-netty-shaded:${grpcVersion}")
     implementation("io.grpc:grpc-services:${grpcVersion}")

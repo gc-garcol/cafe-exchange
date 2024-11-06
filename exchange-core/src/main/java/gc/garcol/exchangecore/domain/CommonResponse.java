@@ -7,6 +7,6 @@ package gc.garcol.exchangecore.domain;
 public record CommonResponse(
     int status,
     int code
-)
+) implements ClusterResponse
 {
 }

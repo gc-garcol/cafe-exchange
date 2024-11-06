@@ -1,6 +1,6 @@
 package gc.garcol.exchangecluster.configuration;
 
-import gc.garcol.exchangecore.service.RedisService;
+import gc.garcol.exchangecore.RedisService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

@@ -7,21 +7,22 @@ import "command.proto";
 import "query.proto";
 
 message Request {
+  UUID correlationId = 1;
   oneof payload {
-    Command command = 1;
-    Query query = 2;
+    Command command = 2;
+    Query query = 3;
   }
 }
 
 message CommonResponse {
-  UUID correlationId = 1;
-  int32 status = 2;
-  int32 code = 3;
+  int32 status = 1;
+  int32 code = 2;
 }
 
 message Response {
+  UUID correlationId = 1;
   oneof payload {
-    CommonResponse commonResponse = 1;
-    QueryResponse queryResponse = 2;
+    CommonResponse commonResponse = 2;
+    QueryResponse queryResponse = 3;
   }
 }

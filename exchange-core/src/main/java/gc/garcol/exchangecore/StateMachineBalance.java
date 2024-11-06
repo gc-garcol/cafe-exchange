@@ -2,7 +2,7 @@ package gc.garcol.exchangecore;
 
 import gc.garcol.exchange.proto.BalanceCommandProto;
 import gc.garcol.exchange.proto.CommandProto;
-import gc.garcol.exchangecore.common.ResponseCode;
+import gc.garcol.exchangecore.common.MessageCode;
 import gc.garcol.exchangecore.common.StatusCode;
 import gc.garcol.exchangecore.domain.Asset;
 import gc.garcol.exchangecore.domain.Balance;
@@ -31,8 +31,13 @@ public class StateMachineBalance implements StateMachine, StateMachinePersistabl
             case CREATEBALANCE -> createBalance(command.getCreateBalance());
             case DEPOSIT -> deposit(command.getDeposit());
             case WITHDRAWN -> withdrawn(command.getWithdrawn());
-            default -> new CommonResponse(StatusCode.BAD_REQUEST.code, ResponseCode.BALANCE_NOT_FOUND.code);
+            default -> new CommonResponse(StatusCode.BAD_REQUEST.code, MessageCode.BALANCE_NOT_FOUND.code);
         };
+    }
+
+    public Balance balance(final long ownerId)
+    {
+        return balances.get(ownerId);
     }
 
     private CommonResponse createBalance(final BalanceCommandProto.CreateBalance createBalance)
@@ -41,9 +46,9 @@ public class StateMachineBalance implements StateMachine, StateMachinePersistabl
         if (!balances.containsKey(ownerId))
         {
             balances.put(ownerId, Balance.create(ownerId));
-            return new CommonResponse(StatusCode.SUCCESS.code, ResponseCode.BALANCE_CREATED_SUCCESS.code);
+            return new CommonResponse(StatusCode.SUCCESS.code, MessageCode.BALANCE_CREATED_SUCCESS.code);
         }
-        return new CommonResponse(StatusCode.BAD_REQUEST.code, ResponseCode.BALANCE_CREATED_FAILED.code);
+        return new CommonResponse(StatusCode.BAD_REQUEST.code, MessageCode.BALANCE_CREATED_FAILED.code);
     }
 
     private CommonResponse deposit(final BalanceCommandProto.Deposit deposit)
@@ -52,13 +57,13 @@ public class StateMachineBalance implements StateMachine, StateMachinePersistabl
         Balance balance = balances.get(ownerId);
         if (Objects.isNull(balance))
         {
-            return new CommonResponse(StatusCode.BAD_REQUEST.code, ResponseCode.BALANCE_NOT_FOUND.code);
+            return new CommonResponse(StatusCode.BAD_REQUEST.code, MessageCode.BALANCE_NOT_FOUND.code);
         }
 
         Asset asset = ExchangeIOC.SINGLETON.getInstance(StateMachineAsset.class).assets.get(deposit.getAsset());
         if (Objects.isNull(asset))
         {
-            return new CommonResponse(StatusCode.BAD_REQUEST.code, ResponseCode.ASSET_NOT_FOUND.code);
+            return new CommonResponse(StatusCode.BAD_REQUEST.code, MessageCode.ASSET_NOT_FOUND.code);
         }
 
         BalanceAsset balanceAsset = balance.assets().get(deposit.getAsset());
@@ -71,23 +76,35 @@ public class StateMachineBalance implements StateMachine, StateMachinePersistabl
             balance.assets().put(deposit.getAsset(), balanceAsset);
         }
 
-        UUID currentVersion = balanceAsset.versions().get(deposit.getVersion().getLockName());
-        UUID requestCurrentVersion = new UUID(
-            deposit.getVersion().getCurrentLock().getUuidMsb(),
-            deposit.getVersion().getCurrentLock().getUuidLsb()
-        );
-
-        if (!Objects.equals(currentVersion, requestCurrentVersion))
+        if (deposit.hasVersion() && balanceAsset.versions().containsKey(deposit.getVersion().getLockName()))
         {
-            return new CommonResponse(StatusCode.BAD_REQUEST.code, ResponseCode.MODIFIED_INSUFFICIENT_VERSION.code);
+            UUID currentVersion = balanceAsset.versions().get(deposit.getVersion().getLockName());
+            UUID requestCurrentVersion = deposit.getVersion().hasCurrentLock() ? new UUID(
+                deposit.getVersion().getCurrentLock().getUuidMsb(),
+                deposit.getVersion().getCurrentLock().getUuidLsb()
+            ) : null;
+
+            if (!Objects.equals(currentVersion, requestCurrentVersion))
+            {
+                return new CommonResponse(StatusCode.BAD_REQUEST.code, MessageCode.MODIFIED_INSUFFICIENT_VERSION.code);
+            }
         }
 
         BigDecimal depositAmount = new BigDecimal(
-            deposit.getAmount().getValue().toString()
+            deposit.getAmount().getValue()
         ).setScale(asset.precision(), RoundingMode.HALF_UP);
         BigDecimal newAmount = balanceAsset.availableAmount().add(depositAmount);
         balanceAsset.availableAmount(newAmount);
-        return new CommonResponse(StatusCode.SUCCESS.code, ResponseCode.BALANCE_DEPOSIT_SUCCESS.code);
+
+        if (deposit.hasVersion())
+        {
+            UUID newVersion = new UUID(
+                deposit.getVersion().getNewLock().getUuidMsb(),
+                deposit.getVersion().getNewLock().getUuidLsb()
+            );
+            balanceAsset.versions().put(deposit.getVersion().getLockName(), newVersion);
+        }
+        return new CommonResponse(StatusCode.SUCCESS.code, MessageCode.BALANCE_DEPOSIT_SUCCESS.code);
     }
 
     private CommonResponse withdrawn(final BalanceCommandProto.Withdrawn withdrawn)
@@ -96,49 +113,56 @@ public class StateMachineBalance implements StateMachine, StateMachinePersistabl
         Balance balance = balances.get(ownerId);
         if (Objects.isNull(balance))
         {
-            return new CommonResponse(StatusCode.BAD_REQUEST.code, ResponseCode.BALANCE_NOT_FOUND.code);
+            return new CommonResponse(StatusCode.BAD_REQUEST.code, MessageCode.BALANCE_NOT_FOUND.code);
         }
 
         Asset asset = ExchangeIOC.SINGLETON.getInstance(StateMachineAsset.class).assets.get(withdrawn.getAsset());
         if (Objects.isNull(asset))
         {
-            return new CommonResponse(StatusCode.BAD_REQUEST.code, ResponseCode.ASSET_NOT_FOUND.code);
+            return new CommonResponse(StatusCode.BAD_REQUEST.code, MessageCode.ASSET_NOT_FOUND.code);
         }
 
         BalanceAsset balanceAsset = balance.assets().get(withdrawn.getAsset());
         if (Objects.isNull(balanceAsset))
         {
-            return new CommonResponse(StatusCode.BAD_REQUEST.code, ResponseCode.BALANCE_ASSET_NOT_FOUND.code);
+            return new CommonResponse(StatusCode.BAD_REQUEST.code, MessageCode.BALANCE_ASSET_NOT_FOUND.code);
         }
 
-        UUID currentVersion = balanceAsset.versions().get(withdrawn.getVersion().getLockName());
-        UUID requestCurrentVersion = new UUID(
-            withdrawn.getVersion().getCurrentLock().getUuidMsb(),
-            withdrawn.getVersion().getCurrentLock().getUuidLsb()
-        );
-
-        if (!Objects.equals(currentVersion, requestCurrentVersion))
+        if (withdrawn.hasVersion() && balanceAsset.versions().containsKey(withdrawn.getVersion().getLockName()))
         {
-            return new CommonResponse(StatusCode.BAD_REQUEST.code, ResponseCode.MODIFIED_INSUFFICIENT_VERSION.code);
+            UUID currentVersion = balanceAsset.versions().get(withdrawn.getVersion().getLockName());
+            UUID requestCurrentVersion = withdrawn.getVersion().hasCurrentLock() ? new UUID(
+                withdrawn.getVersion().getCurrentLock().getUuidMsb(),
+                withdrawn.getVersion().getCurrentLock().getUuidLsb()
+            ) : null;
+
+            if (!Objects.equals(currentVersion, requestCurrentVersion))
+            {
+                return new CommonResponse(StatusCode.BAD_REQUEST.code, MessageCode.MODIFIED_INSUFFICIENT_VERSION.code);
+            }
         }
 
         BigDecimal withdrawnAmount = new BigDecimal(
-            withdrawn.getAmount().getValue().toString()
+            withdrawn.getAmount().getValue()
         ).setScale(asset.precision(), RoundingMode.HALF_UP);
 
         if (withdrawnAmount.compareTo(balanceAsset.availableAmount()) < 0)
         {
-            return new CommonResponse(StatusCode.BAD_REQUEST.code, ResponseCode.BALANCE_WITHDRAW_FAILED_BALANCE_INSUFFICIENT.code);
+            return new CommonResponse(StatusCode.BAD_REQUEST.code, MessageCode.BALANCE_WITHDRAW_FAILED_BALANCE_INSUFFICIENT.code);
         }
 
         BigDecimal newAmount = balanceAsset.availableAmount().subtract(withdrawnAmount);
         balanceAsset.availableAmount(newAmount);
-        UUID newVersion = new UUID(
-            withdrawn.getVersion().getNewLock().getUuidMsb(),
-            withdrawn.getVersion().getNewLock().getUuidLsb()
-        );
-        balanceAsset.versions().put(withdrawn.getVersion().getLockName(), newVersion);
-        return new CommonResponse(StatusCode.SUCCESS.code, ResponseCode.BALANCE_WITHDRAW_SUCCESS.code);
+
+        if (withdrawn.hasVersion())
+        {
+            UUID newVersion = new UUID(
+                withdrawn.getVersion().getNewLock().getUuidMsb(),
+                withdrawn.getVersion().getNewLock().getUuidLsb()
+            );
+            balanceAsset.versions().put(withdrawn.getVersion().getLockName(), newVersion);
+        }
+        return new CommonResponse(StatusCode.SUCCESS.code, MessageCode.BALANCE_WITHDRAW_SUCCESS.code);
     }
 
     public void loadSnapshot()

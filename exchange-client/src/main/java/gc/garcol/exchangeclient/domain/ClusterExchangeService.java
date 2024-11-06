@@ -1,7 +1,10 @@
 package gc.garcol.exchangeclient.domain;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.protobuf.util.JsonFormat;
 import gc.garcol.exchange.proto.ClusterPayloadProto;
 import gc.garcol.exchange.proto.ClusterServiceGrpc;
+import gc.garcol.exchange.proto.QueryProto;
 import io.grpc.ManagedChannelBuilder;
 import io.grpc.stub.StreamObserver;
 import lombok.extern.slf4j.Slf4j;
@@ -42,6 +45,7 @@ public class ClusterExchangeService implements Agent
     private AgentRunner requestConsumer;
     private final BlockingQueue<RequestQueueItem> requestQueue = new LinkedBlockingQueue<>();
 
+    private final ObjectMapper jsonMapper = new ObjectMapper();
     private ClusterServiceGrpc.ClusterServiceStub clusterServiceStub;
     private StreamObserver<ClusterPayloadProto.Request> requestStream;
     private StreamObserver<ClusterPayloadProto.Response> responseStream = new StreamObserver<>()
@@ -49,24 +53,46 @@ public class ClusterExchangeService implements Agent
 
         public void onNext(final ClusterPayloadProto.Response response)
         {
-            switch (response.getPayloadCase())
+            UUID correlationId = new UUID(
+                response.getCorrelationId().getUuidMsb(),
+                response.getCorrelationId().getUuidLsb()
+            );
+
+            try
             {
-                case COMMONRESPONSE ->
+                // todo refactor
+                switch (response.getPayloadCase())
                 {
-                    ClusterPayloadProto.CommonResponse commonResponse = response.getCommonResponse();
+                    case COMMONRESPONSE ->
+                    {
+                        ClusterPayloadProto.CommonResponse commonResponse = response.getCommonResponse();
 
-                    UUID correlationId = new UUID(
-                        commonResponse.getCorrelationId().getUuidMsb(),
-                        commonResponse.getCorrelationId().getUuidLsb()
-                    );
-
-                    Optional.ofNullable(responseFutures.remove(correlationId))
-                        .ifPresent(responseFuture -> responseFuture.complete(new CommonResponse(
-                            commonResponse.getStatus(),
-                            commonResponse.getCode(),
-                            MessageCode.of(commonResponse.getCode())
-                        )));
+                        Optional.ofNullable(responseFutures.remove(correlationId))
+                            .ifPresent(responseFuture -> responseFuture.complete(new CommonResponse(
+                                commonResponse.getStatus(),
+                                commonResponse.getCode(),
+                                Optional.ofNullable(MessageCode.of(commonResponse.getCode()))
+                                    .map(MessageCode::toString)
+                                    .orElse("Unknown message code"))
+                            ));
+                    }
+                    case QUERYRESPONSE ->
+                    {
+                        QueryProto.QueryResponse queryResponse = response.getQueryResponse();
+                        var responseDataJson = JsonFormat.printer().print(queryResponse);
+                        var responseData = jsonMapper.readTree(responseDataJson);
+                        Optional.ofNullable(responseFutures.remove(correlationId))
+                            .ifPresent(responseFuture -> responseFuture.complete(new QueryResponse(
+                                StatusCode.SUCCESS.code,
+                                responseData.fields().next().getValue()
+                            )));
+                    }
                 }
+            }
+            catch (Exception e)
+            {
+                Optional.ofNullable(responseFutures.remove(correlationId))
+                    .ifPresent(responseFuture -> responseFuture.complete(new CommonResponse(500, 500, e.getMessage())));
             }
         }
 
