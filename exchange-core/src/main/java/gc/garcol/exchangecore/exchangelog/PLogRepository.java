@@ -17,6 +17,9 @@ public class PLogRepository
 {
     private final ELogMetadata logMetadata;
 
+    static ByteBuffer indexBuffer = ByteBuffer.allocate(ELogIndex.SIZE);
+
+
     @SneakyThrows
     public PLogRepository()
     {
@@ -28,18 +31,17 @@ public class PLogRepository
     public byte[] read(long segment, long index)
     {
         try (
-            RandomAccessFile indexFile = new RandomAccessFile(LogUtil.indexName(segment), "r");
-            RandomAccessFile logFile = new RandomAccessFile(LogUtil.indexPath(segment), "r")
+            RandomAccessFile indexFile = new RandomAccessFile(LogUtil.indexPath(segment), "r");
+            RandomAccessFile logFile = new RandomAccessFile(LogUtil.logPath(segment), "r")
         )
         {
-            logFile.seek(index * ELogIndex.SIZE);
+            indexFile.seek(index * ELogIndex.SIZE);
             var logIndex = new ELogIndex()
-                .index(logFile.readLong())
-                .entryLength(logFile.readInt());
-            indexFile.seek(logIndex.index());
-            // todo using ByteBuffer
+                .index(indexFile.readLong())
+                .entryLength(indexFile.readInt());
+            logFile.seek(logIndex.index());
             var buffer = new byte[logIndex.entryLength()];
-            indexFile.readFully(buffer);
+            logFile.readFully(buffer);
             return buffer;
         }
         catch (Exception e)
@@ -49,27 +51,28 @@ public class PLogRepository
     }
 
     @SneakyThrows
-    public void write(byte[] commands)
+    public void write(ByteBuffer commands)
     {
         var segment = logMetadata.currentSegment();
         try (
-            RandomAccessFile indexFile = new RandomAccessFile(LogUtil.indexName(segment), "rw");
-            RandomAccessFile logFile = new RandomAccessFile(LogUtil.indexPath(segment), "rw")
+            RandomAccessFile indexFile = new RandomAccessFile(LogUtil.indexPath(segment), "rw");
+            RandomAccessFile logFile = new RandomAccessFile(LogUtil.logPath(segment), "rw")
         )
         {
             FileChannel indexChannel = indexFile.getChannel();
-            FileChannel fileChannel = logFile.getChannel();
+            FileChannel logChannel = logFile.getChannel();
 
-            var indexBuffer = ByteBuffer.allocate(ELogIndex.SIZE);
+            indexBuffer.clear();
             indexBuffer.putLong(logFile.length());
-            indexBuffer.putInt(commands.length);
+            indexBuffer.putInt(commands.limit());
             indexBuffer.flip();
 
-            var offset = logFile.length();
-            var logBuffer = ByteBuffer.wrap(commands);
-            fileChannel.write(logBuffer, offset);
-            indexChannel.write(indexBuffer);
-            fileChannel.force(true);
+            var logOffset = logChannel.size();
+            var indexOffset = indexChannel.size();
+            logChannel.write(commands, logOffset);
+            indexChannel.write(indexBuffer, indexOffset);
+
+            logChannel.force(true);
             indexChannel.force(true);
         }
     }

@@ -1,7 +1,9 @@
 package gc.garcol.exchangecore;
 
+import gc.garcol.exchange.proto.ClusterPayloadProto;
 import gc.garcol.exchangecore.common.ClusterConstant;
 import gc.garcol.exchangecore.common.Env;
+import gc.garcol.exchangecore.exchangelog.PLogRepository;
 import gc.garcol.exchangecore.ringbuffer.ConsumerTemplate;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -25,6 +27,7 @@ import java.nio.ByteBuffer;
 public class AgentJournal extends ConsumerTemplate implements Agent
 {
 
+    final PLogRepository logRepository;
     final ByteBuffer commandsBuilder = ByteBuffer.allocate(Env.BATCH_INSERT_SIZE * Env.MAX_COMMAND_SIZE);
     final ByteBuffer cachedBuffer = ByteBuffer.allocate(Env.MAX_COMMAND_SIZE);
     int messageCount;
@@ -40,6 +43,8 @@ public class AgentJournal extends ConsumerTemplate implements Agent
         {
             commandsBuilder.putInt(0, messageCount);
             var messages = commandsBuilder.slice(0, nextIndex);
+
+            logRepository.write(messages);
         }
         return 0;
     }
@@ -56,7 +61,7 @@ public class AgentJournal extends ConsumerTemplate implements Agent
             if (msgTypeId == ClusterConstant.COMMAND_MSG_TYPE)
             {
                 messageCount++;
-                int messageLength = length - Long.BYTES * 2;
+                int messageLength = length - Long.BYTES * 2; // length - correlationId.size
                 cachedBuffer.clear();
                 buffer.getBytes(index + Long.BYTES * 2, cachedBuffer, messageLength);
                 commandsBuilder.putInt(nextIndex, messageLength);
