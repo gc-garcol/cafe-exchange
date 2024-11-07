@@ -1,10 +1,12 @@
 package gc.garcol.exchangecore.exchangelog;
 
-import gc.garcol.exchange.proto.MetadataProto;
 import gc.garcol.exchangecore.common.Env;
 import gc.garcol.exchangecore.common.InternalException;
 
+import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.io.RandomAccessFile;
+import java.nio.ByteBuffer;
 
 /**
  * @author thaivc
@@ -13,34 +15,39 @@ import java.io.RandomAccessFile;
 public class PSnapshotRepository
 {
 
-    public ESnapshotMetadata read()
+    private final ByteBuffer cachedBuffer = ByteBuffer.allocate(Long.BYTES * 2);
+
+    public ESnapshotMetadata readMetadata()
     {
         try (RandomAccessFile metadataFile = new RandomAccessFile(Env.SNAPSHOT_METADATA_FILE, "r"))
         {
-            var buffer = new byte[(int)metadataFile.length()];
+            var buffer = new byte[Long.BYTES * 2];
             metadataFile.readFully(buffer);
-            var data = MetadataProto.SnapshotMetadata.parseFrom(buffer);
+            ByteBuffer data = ByteBuffer.wrap(buffer);
             return new ESnapshotMetadata()
-                .lastSnapshotIndex(data.getLastSnapshotIndex())
-                .lastSnapshotSegment(data.getLastSnapshotSegment());
+                .lastSnapshotIndex(data.getLong())
+                .lastSnapshotSegment(data.getLong());
         }
-        catch (Exception e)
+        catch (FileNotFoundException e)
+        {
+            return new ESnapshotMetadata();
+        }
+        catch (IOException e)
         {
             throw new InternalException(e);
         }
     }
 
-    public void write(ESnapshotMetadata snapshotMetadata)
+    public void writeMetadata(ESnapshotMetadata snapshotMetadata)
     {
-        var data = MetadataProto.SnapshotMetadata.newBuilder()
-            .setLastSnapshotIndex(snapshotMetadata.lastSnapshotIndex())
-            .setLastSnapshotSegment(snapshotMetadata.lastSnapshotSegment())
-            .build();
+        cachedBuffer.clear();
+        cachedBuffer.putLong(0, snapshotMetadata.lastSnapshotSegment());
+        cachedBuffer.putLong(Long.BYTES, snapshotMetadata.lastSnapshotIndex());
+        cachedBuffer.flip();
         try (RandomAccessFile metadataFile = new RandomAccessFile(Env.SNAPSHOT_METADATA_FILE, "rw"))
         {
             metadataFile.seek(0);
-            metadataFile.write(data.toByteArray());
-            metadataFile.setLength(data.getSerializedSize());
+            metadataFile.write(cachedBuffer.array());
         }
         catch (Exception e)
         {

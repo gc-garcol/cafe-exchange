@@ -1,6 +1,5 @@
 package gc.garcol.exchangecluster;
 
-import gc.garcol.exchangecluster.transport.GRpcClusterNetworkResource;
 import gc.garcol.exchangecore.BootstrapCluster;
 import jakarta.annotation.PreDestroy;
 import lombok.RequiredArgsConstructor;
@@ -17,7 +16,6 @@ public class ExchangeClusterApplication
 {
 
     private final BootstrapCluster bootstrapCluster;
-    private final GRpcClusterNetworkResource grpcClusterResource;
 
     public static void main(String[] args)
     {
@@ -35,7 +33,8 @@ public class ExchangeClusterApplication
         catch (Exception e)
         {
             log.error("bootstrap exception", e);
-            System.exit(2);
+            Runtime.getRuntime().exit(1);
+//            Runtime.getRuntime().halt(1);
         }
     }
 

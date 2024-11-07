@@ -11,7 +11,7 @@ import java.util.Map;
  * @author thaivc
  * @since 2024
  */
-public class StateMachineAsset implements StateMachine, StateMachinePersistable
+public class StateMachineAsset implements StateMachine
 {
 
     Map<String, Asset> assets = new HashMap<>();
@@ -27,15 +27,5 @@ public class StateMachineAsset implements StateMachine, StateMachinePersistable
     public CommonResponse apply(final CommandProto.Command command)
     {
         return null;
-    }
-
-    public void loadSnapshot()
-    {
-
-    }
-
-    public void snapshot()
-    {
-
     }
 }

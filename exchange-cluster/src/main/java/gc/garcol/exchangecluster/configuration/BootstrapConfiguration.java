@@ -2,6 +2,7 @@ package gc.garcol.exchangecluster.configuration;
 
 import gc.garcol.exchangecore.BootstrapCluster;
 import gc.garcol.exchangecore.ExchangeCluster;
+import gc.garcol.exchangecore.StateMachineLoader;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -13,8 +14,8 @@ import org.springframework.context.annotation.Configuration;
 public class BootstrapConfiguration
 {
     @Bean
-    BootstrapCluster bootstrapCluster(ExchangeCluster exchangeCluster)
+    BootstrapCluster bootstrapCluster(ExchangeCluster exchangeCluster, StateMachineLoader stateMachineLoader)
     {
-        return new BootstrapCluster(exchangeCluster);
+        return new BootstrapCluster(exchangeCluster, stateMachineLoader);
     }
 }

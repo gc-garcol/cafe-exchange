@@ -34,7 +34,13 @@ public class StateMachineDelegate implements StateMachine
     {
         return switch (query.getPayloadCase())
         {
-            case BALANCEQUERY -> stateMachineBalance.balance(query.getBalanceQuery().getOwnerId());
+            case BALANCEQUERY ->
+            {
+                var balance = stateMachineBalance.balance(query.getBalanceQuery().getOwnerId());
+                yield balance != null
+                    ? balance
+                    : new CommonResponse(StatusCode.BAD_REQUEST.code, MessageCode.BALANCE_NOT_FOUND.code);
+            }
             default -> new CommonResponse(StatusCode.BAD_REQUEST.code, MessageCode.QUERY_TYPE_NOT_FOUND.code);
         };
     }

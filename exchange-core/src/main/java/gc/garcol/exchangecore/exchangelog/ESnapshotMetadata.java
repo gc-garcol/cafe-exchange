@@ -13,6 +13,6 @@ import lombok.experimental.Accessors;
 @Accessors(fluent = true, chain = true)
 public class ESnapshotMetadata
 {
-    long lastSnapshotSegment = 1;
-    long lastSnapshotIndex = 0;
+    long lastSnapshotSegment = 0;
+    long lastSnapshotIndex = -1;
 }

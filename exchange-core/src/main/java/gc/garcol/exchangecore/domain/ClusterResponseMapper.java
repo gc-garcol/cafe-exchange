@@ -56,6 +56,15 @@ public interface ClusterResponseMapper
         {
             case Balance balance -> parseProto(correlationId, balance);
             case Asset asset -> null; // todo
+            case CommonResponse commonResponse -> ClusterPayloadProto.Response.newBuilder()
+                .setCorrelationId(correlationId)
+                .setCommonResponse(
+                    ClusterPayloadProto.CommonResponse.newBuilder()
+                        .setCode(commonResponse.code())
+                        .setStatus(commonResponse.status())
+                        .build()
+                )
+                .build();
             default -> ClusterPayloadProto.Response.newBuilder()
                 .setCorrelationId(correlationId)
                 .setCommonResponse(

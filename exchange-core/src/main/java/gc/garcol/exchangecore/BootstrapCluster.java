@@ -13,9 +13,11 @@ public class BootstrapCluster implements Bootstrap
 {
 
     private final ExchangeCluster exchangeCluster;
+    private final StateMachineLoader stateMachineLoader;
 
     public void start()
     {
+        stateMachineLoader.loadSnapshot();
         exchangeCluster.onStart();
     }
 

@@ -1,9 +1,8 @@
 package gc.garcol.exchangecluster.configuration;
 
-import gc.garcol.exchangecore.StateMachineAsset;
-import gc.garcol.exchangecore.StateMachineBalance;
-import gc.garcol.exchangecore.StateMachineDelegate;
-import gc.garcol.exchangecore.StateMachineOrder;
+import gc.garcol.exchangecore.*;
+import gc.garcol.exchangecore.exchangelog.PLogRepository;
+import gc.garcol.exchangecore.exchangelog.PSnapshotRepository;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -31,6 +30,16 @@ public class StateMachineConfiguration
     public StateMachineAsset stateMachineAsset()
     {
         return new StateMachineAsset();
+    }
+
+    @Bean
+    public StateMachineLoader stateMachineLoader(
+        PLogRepository logRepository,
+        PSnapshotRepository snapshotRepository,
+        StateMachineDelegate stateMachineDelegate
+    )
+    {
+        return new StateMachineLoader(logRepository, snapshotRepository, stateMachineDelegate);
     }
 
     @Bean

@@ -5,6 +5,8 @@ import gc.garcol.exchangecore.common.Env;
 import gc.garcol.exchangecore.common.InternalException;
 import lombok.SneakyThrows;
 
+import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
@@ -77,8 +79,26 @@ public class PLogRepository
         }
     }
 
+    public long totalIndexOffset(long segment)
+    {
+        try (
+            RandomAccessFile indexFile = new RandomAccessFile(LogUtil.indexPath(segment), "rw");
+        )
+        {
+            return indexFile.length() / ELogIndex.SIZE;
+        }
+        catch (FileNotFoundException e)
+        {
+            return -1;
+        }
+        catch (IOException e)
+        {
+            throw new RuntimeException(e);
+        }
+    }
+
     @SneakyThrows
-    private ELogMetadata readMetadata()
+    public ELogMetadata readMetadata()
     {
         try (RandomAccessFile metadataFile = new RandomAccessFile(Env.METADATA_FILE, "rw"))
         {

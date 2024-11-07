@@ -19,7 +19,7 @@ import java.util.UUID;
  * @author thaivc
  * @since 2024
  */
-public class StateMachineBalance implements StateMachine, StateMachinePersistable
+public class StateMachineBalance implements StateMachine
 {
 
     Long2ObjectHashMap<Balance> balances = new Long2ObjectHashMap<>();
@@ -163,15 +163,5 @@ public class StateMachineBalance implements StateMachine, StateMachinePersistabl
             balanceAsset.versions().put(withdrawn.getVersion().getLockName(), newVersion);
         }
         return new CommonResponse(StatusCode.SUCCESS.code, MessageCode.BALANCE_WITHDRAW_SUCCESS.code);
-    }
-
-    public void loadSnapshot()
-    {
-
-    }
-
-    public void snapshot()
-    {
-
     }
 }
