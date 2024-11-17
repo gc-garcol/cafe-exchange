@@ -1,15 +1,14 @@
 package gc.garcol.exchangecore;
 
-import gc.garcol.exchange.proto.ClusterPayloadProto;
 import gc.garcol.exchangecore.common.ClusterConstant;
 import gc.garcol.exchangecore.common.Env;
 import gc.garcol.exchangecore.exchangelog.PLogRepository;
-import gc.garcol.exchangecore.ringbuffer.ConsumerTemplate;
+import gc.garcol.exchangecore.ringbuffer.OneToManyRingBuffer;
+import gc.garcol.exchangecore.ringbuffer.UnsafeBuffer;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
-import org.agrona.MutableDirectBuffer;
 import org.agrona.concurrent.Agent;
 
 import java.nio.ByteBuffer;
@@ -24,10 +23,11 @@ import java.nio.ByteBuffer;
 @Getter
 @Setter
 @RequiredArgsConstructor
-public class AgentJournal extends ConsumerTemplate implements Agent
+public class AgentJournal implements Agent
 {
 
     final PLogRepository logRepository;
+    final OneToManyRingBuffer oneToManyRingBuffer;
     final ByteBuffer commandsBuilder = ByteBuffer.allocate(Env.BATCH_INSERT_SIZE * Env.MAX_COMMAND_SIZE);
     final ByteBuffer cachedBuffer = ByteBuffer.allocate(Env.MAX_COMMAND_SIZE);
     int messageCount;
@@ -38,7 +38,7 @@ public class AgentJournal extends ConsumerTemplate implements Agent
         messageCount = 0;
         nextIndex = Integer.BYTES;
         commandsBuilder.clear();
-        this.poll(Env.BATCH_INSERT_SIZE);
+        this.oneToManyRingBuffer.read(0, this::consume, Env.BATCH_INSERT_SIZE);
         if (messageCount > 0)
         {
             commandsBuilder.putInt(0, messageCount);
@@ -54,7 +54,7 @@ public class AgentJournal extends ConsumerTemplate implements Agent
         return "Journaler";
     }
 
-    public boolean consume(final int msgTypeId, final MutableDirectBuffer buffer, final int index, final int length)
+    public boolean consume(final int msgTypeId, final UnsafeBuffer buffer, final int index, final int length)
     {
         try
         {
@@ -63,7 +63,7 @@ public class AgentJournal extends ConsumerTemplate implements Agent
                 messageCount++;
                 int messageLength = length - Long.BYTES * 2; // length - correlationId.size
                 cachedBuffer.clear();
-                buffer.getBytes(index + Long.BYTES * 2, cachedBuffer, messageLength);
+                buffer.getBytes(index + Long.BYTES * 2, cachedBuffer, 0, messageLength);
                 commandsBuilder.putInt(nextIndex, messageLength);
                 commandsBuilder.put(nextIndex + Integer.BYTES, cachedBuffer, 0, messageLength);
                 nextIndex = nextIndex + Integer.BYTES + messageLength;

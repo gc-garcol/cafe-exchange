@@ -1,6 +1,8 @@
 package gc.garcol.exchangecore.ringbuffer;
 
+import lombok.Getter;
 import lombok.RequiredArgsConstructor;
+import lombok.experimental.Accessors;
 import lombok.extern.slf4j.Slf4j;
 import org.agrona.MutableDirectBuffer;
 import org.agrona.concurrent.ControlledMessageHandler;
@@ -16,12 +18,15 @@ import java.util.UUID;
  * @since 2024
  */
 @Slf4j
+@Accessors(fluent = true)
 @RequiredArgsConstructor
 public class ManyToManyRingBuffer
 {
     private final ManyToOneRingBuffer inboundRingBuffer;
+
+    @Getter
     private final OneToManyRingBuffer oneToManyRingBuffer;
-    private final ByteBuffer cachedBuffer = ByteBuffer.allocateDirect(1 << 10);
+    private final ByteBuffer cachedBuffer = ByteBuffer.allocate(1 << 10);
 
     public boolean publishMessage(int messageType, UUID sender, byte[] message)
     {
@@ -42,7 +47,9 @@ public class ManyToManyRingBuffer
         inboundRingBuffer.controlledRead((int msgTypeId, MutableDirectBuffer buffer, int index, int length) -> {
             cachedBuffer.clear();
             buffer.getBytes(index, cachedBuffer, length);
-            boolean success = oneToManyRingBuffer.producer().publish(msgTypeId, cachedBuffer, length);
+            cachedBuffer.position(length);
+            cachedBuffer.flip();
+            boolean success = oneToManyRingBuffer.write(msgTypeId, cachedBuffer);
             return success ? ControlledMessageHandler.Action.CONTINUE : ControlledMessageHandler.Action.ABORT;
         });
     }

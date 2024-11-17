@@ -4,6 +4,7 @@ import gc.garcol.exchange.proto.ClusterPayloadProto;
 import gc.garcol.exchangecore.common.ByteUtil;
 import gc.garcol.exchangecore.common.ClusterConstant;
 import gc.garcol.exchangecore.common.ClusterGlobal;
+import gc.garcol.exchangecore.common.Env;
 import gc.garcol.exchangecore.exchangelog.PLogRepository;
 import gc.garcol.exchangecore.ringbuffer.ManyToManyRingBuffer;
 import gc.garcol.exchangecore.ringbuffer.OneToManyRingBuffer;
@@ -14,7 +15,6 @@ import org.agrona.concurrent.SleepingIdleStrategy;
 import org.agrona.concurrent.SleepingMillisIdleStrategy;
 import org.agrona.concurrent.ringbuffer.ManyToOneRingBuffer;
 
-import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicReference;
@@ -37,16 +37,16 @@ public class ExchangeClusterStateLeader implements ExchangeClusterState
         this.exchangeCluster = cluster;
 
         var heartBeatAgent = new AgentHeartBeat("Try to keep leader role " + ClusterGlobal.NODE_ID);
-        var journalerAgent = new AgentJournal(ExchangeIOC.SINGLETON.getInstance(PLogRepository.class));
 
         ByteUtil.eraseByteBuffer(exchangeCluster.requestAcceptorBuffer.byteBuffer());
-        ByteUtil.eraseByteBuffer(exchangeCluster.requestBuffer.byteBuffer());
 
         var manyToOneRingBuffer = new ManyToOneRingBuffer(exchangeCluster.requestAcceptorBuffer);
         var oneToManyRingBuffer = new OneToManyRingBuffer(
-            exchangeCluster.requestBuffer,
-            List.of(journalerAgent, exchangeCluster.domainLogicConsumer.reset())
+            Env.BUFFER_SIZE_REQUEST_POW,
+            2 // journaler then AgentDomainMessageHandler
         );
+        AgentDomainMessageHandler.CONSUMER_INDEX.set(1);
+        var journalerAgent = new AgentJournal(ExchangeIOC.SINGLETON.getInstance(PLogRepository.class), oneToManyRingBuffer);
 
         exchangeCluster.requestRingBuffer = new ManyToManyRingBuffer(
             manyToOneRingBuffer,

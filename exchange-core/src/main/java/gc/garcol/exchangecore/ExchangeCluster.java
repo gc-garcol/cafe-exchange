@@ -28,7 +28,6 @@ public class ExchangeCluster
     AtomicReference<UUID> currentLeader = new AtomicReference<>();
 
     AtomicBuffer requestAcceptorBuffer;
-    AtomicBuffer requestBuffer;
 
     ManyToManyRingBuffer requestRingBuffer;
     OneToOneRingBuffer responseRingBuffer;
@@ -44,7 +43,6 @@ public class ExchangeCluster
     public ExchangeCluster()
     {
         requestAcceptorBuffer = new UnsafeBuffer(ByteBuffer.allocateDirect((1 << Env.BUFFER_SIZE_REQUEST_ACCEPTOR_POW) + RingBufferDescriptor.TRAILER_LENGTH));
-        requestBuffer = new UnsafeBuffer(ByteBuffer.allocateDirect((1 << Env.BUFFER_SIZE_REQUEST_POW) + RingBufferDescriptor.TRAILER_LENGTH));
 
         var commandsOutboundBuffer = new UnsafeBuffer(ByteBuffer.allocateDirect((1 << Env.BUFFER_SIZE_RESPONSE_POW) + RingBufferDescriptor.TRAILER_LENGTH));
         var heartBeatInboundBuffer = new UnsafeBuffer(ByteBuffer.allocateDirect((1 << Env.BUFFER_SIZE_HEARTBEAT_POW) + RingBufferDescriptor.TRAILER_LENGTH));

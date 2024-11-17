@@ -61,6 +61,9 @@ tasks {
         classpath = sourceSets.main.get().runtimeClasspath
         mainClass.set("gc.garcol.exchangecluster.ExchangeClusterApplication")
 
+        // add `--add-opens java.base/java.nio=ALL-UNNAMED` to the JVM arguments
+        jvmArgs = listOf("--add-opens", "java.base/java.nio=ALL-UNNAMED")
+
         // Get the port from command-line arguments or use a default value
         val port = project.properties["port"]?.toString() ?: "8080"
         val grpcPort = project.properties["grpcport"]?.toString() ?: "9500"

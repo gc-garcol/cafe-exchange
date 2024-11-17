@@ -11,7 +11,6 @@ import org.agrona.concurrent.SleepingIdleStrategy;
 import org.agrona.concurrent.SleepingMillisIdleStrategy;
 import org.agrona.concurrent.ringbuffer.ManyToOneRingBuffer;
 
-import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -36,13 +35,13 @@ public class ExchangeClusterStateFollower implements ExchangeClusterState
         var heartBeatAgent = new AgentHeartBeat("Try to acquire leader role " + ClusterGlobal.NODE_ID);
 
         ByteUtil.eraseByteBuffer(exchangeCluster.requestAcceptorBuffer.byteBuffer());
-        ByteUtil.eraseByteBuffer(exchangeCluster.requestBuffer.byteBuffer());
 
         var manyToOneRingBuffer = new ManyToOneRingBuffer(exchangeCluster.requestAcceptorBuffer);
         var oneToManyRingBuffer = new OneToManyRingBuffer(
-            exchangeCluster.requestBuffer,
-            List.of(exchangeCluster.domainLogicConsumer.reset())
+            Env.BUFFER_SIZE_REQUEST_POW,
+            1 // AgentDomainMessageHandler
         );
+        AgentDomainMessageHandler.CONSUMER_INDEX.set(0);
 
         exchangeCluster.requestRingBuffer = new ManyToManyRingBuffer(
             manyToOneRingBuffer,

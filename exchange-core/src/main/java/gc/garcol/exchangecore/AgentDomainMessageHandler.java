@@ -7,10 +7,10 @@ import gc.garcol.exchange.proto.CommonProto;
 import gc.garcol.exchange.proto.QueryProto;
 import gc.garcol.exchangecore.common.Env;
 import gc.garcol.exchangecore.domain.ClusterResponseMapper;
-import gc.garcol.exchangecore.ringbuffer.ConsumerTemplate;
+import gc.garcol.exchangecore.ringbuffer.ByteBufferUtil;
+import gc.garcol.exchangecore.ringbuffer.UnsafeBuffer;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.agrona.MutableDirectBuffer;
 import org.agrona.concurrent.Agent;
 import org.agrona.concurrent.IdleStrategy;
 import org.agrona.concurrent.SleepingMillisIdleStrategy;
@@ -18,6 +18,7 @@ import org.agrona.concurrent.SleepingMillisIdleStrategy;
 import java.nio.ByteBuffer;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Handle all commands, queries and event effecting to {@link StateMachine} and {@link ExchangeCluster}
@@ -27,12 +28,13 @@ import java.util.concurrent.atomic.AtomicBoolean;
  */
 @Slf4j
 @RequiredArgsConstructor
-public class AgentDomainMessageHandler extends ConsumerTemplate implements Agent
+public class AgentDomainMessageHandler implements Agent
 {
 
     public static final AtomicBoolean IS_RUNNING = new AtomicBoolean(false);
+    public static final AtomicInteger CONSUMER_INDEX = new AtomicInteger(0);
 
-    private final ByteBuffer cachedBuffer = ByteBuffer.allocateDirect(Env.MAX_COMMAND_SIZE);
+    private final ByteBuffer cachedBuffer = ByteBuffer.allocate(Env.MAX_COMMAND_SIZE);
     private final ExchangeCluster exchangeCluster;
     private StateMachineDelegate stateMachine;
     private final IdleStrategy responseIdle = new SleepingMillisIdleStrategy(1);
@@ -54,18 +56,20 @@ public class AgentDomainMessageHandler extends ConsumerTemplate implements Agent
         {
             stateMachine = ExchangeIOC.SINGLETON.getInstance(StateMachineDelegate.class);
         }
-        this.poll();
+        this.exchangeCluster.requestRingBuffer.oneToManyRingBuffer()
+            .read(CONSUMER_INDEX.get(), this::consume);
         return 0;
     }
 
-    public boolean consume(final int msgTypeId, final MutableDirectBuffer buffer, final int index, final int length)
+    public boolean consume(final int msgTypeId, final UnsafeBuffer buffer, final int index, final int length)
     {
         try
         {
             UUID sender = new UUID(buffer.getLong(index), buffer.getLong(index + Long.BYTES));
 
             cachedBuffer.clear();
-            buffer.getBytes(index + Long.BYTES * 2, cachedBuffer, length - Long.BYTES * 2);
+            buffer.getBytes(index + Long.BYTES * 2, cachedBuffer, 0, length - Long.BYTES * 2);
+            cachedBuffer.position(length - Long.BYTES * 2);
             cachedBuffer.flip();
             ClusterPayloadProto.Request request = ClusterPayloadProto.Request.parseFrom(cachedBuffer);
 
