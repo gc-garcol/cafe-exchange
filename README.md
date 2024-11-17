@@ -10,6 +10,8 @@
 make setup-dev
 ```
 
+- add `--add-opens java.base/java.nio=ALL-UNNAMED` to the JVM arguments
+
 - Run cluster
 
 ```shell
