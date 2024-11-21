@@ -23,6 +23,14 @@ java {
 
 repositories {
     mavenCentral()
+
+    maven {
+        url = uri("https://maven.pkg.github.com/gc-garcol/cafe-ringbuffer")
+        credentials {
+            username = "gc-garcol"
+            password = "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"
+        }
+    }
 }
 
 var agronaVersion = "1.23.1"
@@ -52,6 +60,8 @@ dependencies {
 
     implementation("org.rocksdb:rocksdbjni:${rockdbVersion}")
     implementation("redis.clients:jedis:${jedisVersion}")
+
+    implementation("io.github.gc-garcol:cafe-ringbuffer:0.0.1")
 }
 
 sourceSets {

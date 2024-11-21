@@ -1,5 +1,6 @@
 package gc.garcol.exchangecore.ringbuffer;
 
+import gc.garcol.libcore.OneToManyRingBuffer;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.Accessors;

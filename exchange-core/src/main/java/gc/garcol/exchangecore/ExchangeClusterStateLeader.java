@@ -7,7 +7,7 @@ import gc.garcol.exchangecore.common.ClusterGlobal;
 import gc.garcol.exchangecore.common.Env;
 import gc.garcol.exchangecore.exchangelog.PLogRepository;
 import gc.garcol.exchangecore.ringbuffer.ManyToManyRingBuffer;
-import gc.garcol.exchangecore.ringbuffer.OneToManyRingBuffer;
+import gc.garcol.libcore.OneToManyRingBuffer;
 import lombok.extern.slf4j.Slf4j;
 import org.agrona.concurrent.AgentRunner;
 import org.agrona.concurrent.ControlledMessageHandler;
