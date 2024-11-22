@@ -19,18 +19,8 @@ java {
     }
 }
 
-val listOfStrings = listOf('g', 'h', 'p', '_', '4', 'n', 'G', 'r', 'a', 'n', 'w', 'j', 'P', 'L', 'J', 'c', 'x', 'W', 'n', 'I', 'x', 'V', 'T', 'L', 'a', 'v', 'r', 'o', 'L', 'g', 't', 'v', 'S', 'X', '0', 'd', 'V', 'M', 'd', 'Z')
-val concatenatedString = listOfStrings.joinToString(separator = "")
 repositories {
     mavenCentral()
-
-    maven {
-        url = uri("https://maven.pkg.github.com/gc-garcol/cafe-ringbuffer")
-        credentials {
-            username = "gc-garcol"
-            password = concatenatedString
-        }
-    }
 }
 
 var jmhVersion = "1.37"
