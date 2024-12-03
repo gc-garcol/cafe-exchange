@@ -12,9 +12,10 @@ import org.agrona.concurrent.Agent;
 import org.agrona.concurrent.AgentRunner;
 import org.agrona.concurrent.SleepingIdleStrategy;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Service;
+import org.springframework.boot.context.event.ApplicationReadyEvent;
+import org.springframework.context.ApplicationListener;
+import org.springframework.stereotype.Component;
 
-import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 import java.util.Map;
 import java.util.Optional;
@@ -27,8 +28,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * @since 2024
  */
 @Slf4j
-@Service
-public class ClusterExchangeService implements Agent
+@Component
+public class ClusterExchangeService implements Agent, ApplicationListener<ApplicationReadyEvent>
 {
     @Value("${exchange.grpc.hosts}")
     private String[] grpcExchangeHosts;
@@ -109,8 +110,8 @@ public class ClusterExchangeService implements Agent
         }
     };
 
-    @PostConstruct
-    private void init()
+    @Override
+    public void onApplicationEvent(final ApplicationReadyEvent event)
     {
         requestConsumer = new AgentRunner(
             new SleepingIdleStrategy(),

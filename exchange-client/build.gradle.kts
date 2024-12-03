@@ -86,7 +86,7 @@ protobuf {
 
 tasks {
     task("run-client", JavaExec::class) {
-        group = "run"
+        group = "run-client"
         classpath = sourceSets.main.get().runtimeClasspath
         mainClass.set("gc.garcol.exchangeclient.ExchangeClientApplication")
 
