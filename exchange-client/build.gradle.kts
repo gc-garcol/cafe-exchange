@@ -35,9 +35,12 @@ var grpcVersion = "1.65.1"
 var protocVersion = "4.27.2"
 var grpcUtilVersion = "4.28.3"
 var swaggerUIVersion = "2.6.0"
+var prometheusVersion = "1.14.1"
+var springActuatorVersion = "3.3.4"
 
 dependencies {
     implementation("org.springframework.boot:spring-boot-starter-web")
+
     implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:${swaggerUIVersion}")
 
     implementation("org.agrona:agrona:${agronaVersion}")
@@ -53,6 +56,10 @@ dependencies {
     implementation("io.grpc:grpc-stub:${grpcVersion}")
     compileOnly("org.apache.tomcat:annotations-api:${annotationsApiVersion}")
     implementation("com.google.protobuf:protobuf-java-util:${protocVersion}")
+
+    // observability
+    runtimeOnly("io.micrometer:micrometer-registry-prometheus:${prometheusVersion}")
+    implementation("org.springframework.boot:spring-boot-starter-actuator")
 }
 
 sourceSets {
