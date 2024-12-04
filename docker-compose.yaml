@@ -3,9 +3,26 @@ version: '3'
 services:
   redis-stack:
     image: redis/redis-stack:latest
+    container_name: redis
     ports:
       - "6379:6379"  # Redis port
       - "8001:8001"  # RedisInsight port
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:0.82.0
+    container_name: otel-collector
+    restart: unless-stopped
+    command:
+      - --config=/etc/otelcol-contrib/otel-collector.yml
+    volumes:
+      - ./infra/opentelemery/otel-collector.yml:/etc/otelcol-contrib/otel-collector.yml
+    ports:
+      - "1888:1888" # pprof extension
+      - "8888:8888" # Prometheus metrics exposed by the collector
+      - "8889:8889" # Prometheus exporter metrics
+      - "13133:13133" # health_check extension
+      - "4317:4317" # OTLP gRPC receiver
+      - "4318:4318" # OTLP http receiver
+      - "55679:55679" # zpages extension
   prometheus:
     image: prom/prometheus
     container_name: prometheus
@@ -16,8 +33,11 @@ services:
     restart: unless-stopped
     volumes:
       - ./infra/prometheus:/etc/prometheus
-    extra_hosts:
-      - host.docker.internal:host-gateway
+#    extra_hosts:
+#      - host.docker.internal:host-gateway
+    depends_on:
+      - otel-collector
+
   grafana:
     image: grafana/grafana
     container_name: grafana
@@ -26,6 +46,6 @@ services:
     restart: unless-stopped
     environment:
       - GF_SECURITY_ADMIN_USER=admin
-      - GF_SECURITY_ADMIN_PASSWORD=grafana
+      - GF_SECURITY_ADMIN_PASSWORD=admin
     volumes:
       - ./infra/grafana:/etc/grafana/provisioning/datasources

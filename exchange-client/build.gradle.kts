@@ -31,11 +31,11 @@ var agronaVersion = "1.23.1"
 var lombokVersion = "1.18.34"
 var jedisVersion = "5.2.0"
 var annotationsApiVersion = "6.0.53"
-var grpcVersion = "1.65.1"
-var protocVersion = "4.27.2"
+var grpcVersion = "1.68.2"
+var protocVersion = "4.29.0"
 var grpcUtilVersion = "4.28.3"
 var swaggerUIVersion = "2.6.0"
-var prometheusVersion = "1.14.1"
+var otelVersion = "1.14.1"
 var springActuatorVersion = "3.3.4"
 
 dependencies {
@@ -58,8 +58,9 @@ dependencies {
     implementation("com.google.protobuf:protobuf-java-util:${protocVersion}")
 
     // observability
-    runtimeOnly("io.micrometer:micrometer-registry-prometheus:${prometheusVersion}")
     implementation("org.springframework.boot:spring-boot-starter-actuator")
+    runtimeOnly("io.micrometer:micrometer-registry-otlp:${otelVersion}")
+    implementation("io.opentelemetry:opentelemetry-sdk-common:1.44.1")
 }
 
 sourceSets {
