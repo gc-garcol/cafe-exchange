@@ -9,6 +9,12 @@ setup-dev: ## Setup development environment
 down-dev: ## Down development environment
 	docker compose -f docker-compose.yaml down -v
 
+setup-benchmark:
+	docker compose -f docker-compose-benchmark.yaml up -d
+
+down-benchmark:
+	docker compose -f docker-compose-benchmark.yaml down -v
+
 build: ## Build jar
 	./gradlew clean build
 

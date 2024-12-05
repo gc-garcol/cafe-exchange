@@ -12,6 +12,7 @@ import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 
 /**
+ * Single threaded
  * @author thaivc
  * @since 2024
  */

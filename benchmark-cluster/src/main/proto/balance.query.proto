@@ -1,0 +1,14 @@
+syntax = "proto3";
+package gc.garcol.exchange.proto;
+option java_outer_classname = "BalanceQueryProto";
+
+import "common.proto";
+import "balance.proto";
+
+message BalanceQuery {
+  int64 ownerId = 1;
+}
+
+message BalanceQueryResponse {
+  Balance balance = 1;
+}

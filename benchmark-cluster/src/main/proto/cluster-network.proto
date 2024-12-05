@@ -1,0 +1,11 @@
+syntax = "proto3";
+package gc.garcol.exchange.proto;
+option java_outer_classname = "ClusterNetwork";
+
+import "cluster-payload.proto";
+
+service ClusterService {
+
+  rpc send(stream Request) returns (stream Response);
+
+}

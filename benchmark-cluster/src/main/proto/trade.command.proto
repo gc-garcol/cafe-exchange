@@ -1,0 +1,175 @@
+// https://developers.binance.com/docs/derivatives/option/trade
+
+syntax = "proto3";
+package gc.garcol.exchange.proto;
+option java_outer_classname = "TradeCommandProto";
+
+import "enum.proto";
+import "common.proto";
+
+// https://developers.binance.com/docs/derivatives/option/trade
+message NewOrder {
+  UUID correlationId = 1;
+  string symbol = 2; // Option trading pair, e.g BTC-200730-9000-C
+  OrderSide side = 3; // Buy/sell direction: SELL, BUY
+  OrderType type = 4; // Order Type: LIMIT(only support limit)
+  BigDecimal quantity = 5; // Order Quantity
+  int64 timestamp = 6;
+  BigDecimal price = 7; // Order Price
+  TimeInForce timeInForce = 8; // Time in force
+  bool reduceOnly = 9; // Reduce Only（Default false）
+  bool postOnly = 10; // Post Only（Default false）
+  ResponseType newOrderRespType = 11; // "ACK", "RESULT", Default "ACK"
+  string clientOrderId = 12; // A unique id among open orders. Automatically generated if not sent.
+  bool isMmp = 13; // is market maker protection order, true/false
+  int64 recvWindow = 14;
+}
+
+message NewOrderResponse {
+  UUID correlationId = 1;
+  oneof response {
+    NewOrderAck ack = 2;
+    NewOrderReject reject = 3;
+  }
+}
+
+/*
+{
+    "orderId": 4611875134427365377,     // System order number
+    "symbol": "BTC-200730-9000-C",      // Option trading pair
+    "price": "100",                     // Order Price
+    "quantity": "1",                    // Order Quantity
+    "side": "BUY",                      // Buy/sell direction
+    "type": "LIMIT",                    // Order type
+    "createDate": 1592465880683,        // Order Time
+    "reduceOnly": false,
+    "postOnly": false,
+    "mmp": false
+}
+*/
+message NewOrderAck {
+  UUID correlationId = 1;
+  int64 orderId = 2;
+  string symbol = 3;
+  BigDecimal price = 4;
+  BigDecimal quantity = 5;
+  OrderSide side = 6;
+  OrderType type = 7;
+  int64 createDate = 8;
+  bool reduceOnly = 9;
+  bool postOnly = 10;
+  bool mmp = 11;
+}
+
+/*
+{
+    "orderId": 4611875134427365377,     // System order number
+    "symbol": "BTC-200730-9000-C",      // Option trading pair
+    "price": "100",                     // Order Price
+    "quantity": "1",                    // Order Quantity
+    "executedQty": "0",                 // Number of executed quantity
+    "fee": "0",                         // Fee
+    "side": "BUY",                      // Buy/sell direction
+    "type": "LIMIT",                    // Order type
+    "timeInForce": "GTC",               // Time in force method
+    "reduceOnly": false,                // Order is reduce only Y/N
+    "postOnly": false,                  // Order is post only
+    "createTime": 1592465880683,        // Order Time
+    "updateTime": 1566818724722,        // Update time
+    "status": "ACCEPTED",               // Order status
+    "avgPrice": "0",                    // Average price of completed trade
+    "clientOrderId": ""                 // Client order ID
+    "priceScale": 2,
+    "quantityScale": 2,
+    "optionSide": "CALL",
+    "quoteAsset": "USDT",
+    "mmp": false
+}
+*/
+message NewOrderReject {
+  UUID correlationId = 1;
+  int64 orderId = 2;
+  string symbol = 3;
+  BigDecimal price = 4;
+  BigDecimal quantity = 5;
+  BigDecimal executedQty = 6;
+  BigDecimal fee = 7;
+  OrderSide side = 8;
+  OrderType type = 9;
+  TimeInForce timeInForce = 10;
+  bool reduceOnly = 11;
+  bool postOnly = 12;
+  int64 createTime = 13;
+  int64 updateTime = 14;
+  OrderStatus status = 15;
+  BigDecimal avgPrice = 16;
+  string clientOrderId = 17;
+  int32 priceScale = 18;
+  int32 quantityScale = 19;
+  OptionSide optionSide = 20;
+  string quoteAsset = 21;
+  bool mmp = 22;
+}
+
+// https://developers.binance.com/docs/derivatives/option/trade/Cancel-Option-Order
+// At least one instance of orderId and clientOrderId must be sent.
+message CancelOptionOrder {
+  UUID correlationId = 1;
+  string symbol = 2; // Option trading pair, e.g BTC-200730-9000-C
+  int64 orderId = 3; // Order ID, e.g 4611875134427365377
+  string clientOrderId = 4; // User-defined order ID, e.g 10000
+  int64 recvWindow = 5;
+  int64 timestamp = 6;
+}
+
+/*
+{
+    "orderId": 4611875134427365377,     // System order number
+    "symbol": "BTC-200730-9000-C",      // Option trading pair
+    "price": "100",                     // Order Price
+    "quantity": "1",                    // Order Quantity
+    "executedQty": "0",                 // Number of executed quantity
+    "fee": "0",                         // Fee
+    "side": "BUY",                      // Buy/sell direction
+    "type": "LIMIT",                    // Order type
+    "timeInForce": "GTC",               // Time in force method
+    "reduceOnly": false,                // Order is reduce only Y/N
+    "postOnly": false,
+    "createDate": 1592465880683,        // Order Time
+    "updateTime": 1566818724722,        // Update time
+    "status": "ACCEPTED",               // Order status
+    "avgPrice": "0",                    // Average price of completed trade
+    "source": "API",
+    "clientOrderId": "",                // Client order ID
+    "priceScale": 4,
+    "quantityScale": 4,
+    "optionSide": "CALL",
+    "quoteAsset": "USDT",
+    "mmp": false
+}
+*/
+message CancelOrderResponse {
+  UUID correlationId = 1;
+  int64 orderId = 2;
+  string symbol = 3;
+  BigDecimal price = 4;
+  BigDecimal quantity = 5;
+  BigDecimal executedQty = 6;
+  BigDecimal fee = 7;
+  OrderSide side = 8;
+  OrderType type = 9;
+  TimeInForce timeInForce = 10;
+  bool reduceOnly = 11;
+  bool postOnly = 12;
+  int64 createDate = 13;
+  int64 updateTime = 14;
+  OrderStatus status = 15;
+  BigDecimal avgPrice = 16;
+  string source = 17;
+  string clientOrderId = 18;
+  int32 priceScale = 19;
+  int32 quantityScale = 20;
+  OptionSide optionSide = 21;
+  string quoteAsset = 22;
+  bool mmp = 23;
+}

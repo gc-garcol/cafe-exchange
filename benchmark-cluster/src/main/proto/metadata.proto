@@ -1,0 +1,12 @@
+syntax = "proto3";
+package gc.garcol.exchange.proto;
+option java_outer_classname = "MetadataProto";
+
+message LogMetadata {
+  int64 currentSegment = 1;
+}
+
+message SnapshotMetadata {
+  int64 lastSnapshotSegment = 1;
+  int64 lastSnapshotIndex = 2;
+}

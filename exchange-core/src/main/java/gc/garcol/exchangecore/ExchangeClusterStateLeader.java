@@ -63,7 +63,7 @@ public class ExchangeClusterStateLeader implements ExchangeClusterState
         );
 
         this.journalerRunner = new AgentRunner(
-            new SleepingIdleStrategy(10_000),
+            new SleepingIdleStrategy(),
             error -> log.error("Leader journaler error", error),
             null,
             journalerAgent

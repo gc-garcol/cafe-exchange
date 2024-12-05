@@ -1,0 +1,18 @@
+syntax = "proto3";
+package gc.garcol.exchange.proto;
+option java_outer_classname = "QueryProto";
+
+import "common.proto";
+import "balance.query.proto";
+
+message Query {
+  oneof payload {
+    BalanceQuery balanceQuery = 1;
+  }
+}
+
+message QueryResponse {
+  oneof payload {
+    BalanceQueryResponse balanceQueryResponse = 1;
+  }
+}

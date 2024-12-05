@@ -1,0 +1,23 @@
+syntax = "proto3";
+package gc.garcol.exchange.proto;
+option java_outer_classname = "BalanceCommandProto";
+
+import "common.proto";
+
+message CreateBalance {
+  int64 ownerId = 1;
+}
+
+message Deposit {
+  int64 ownerId = 1;
+  string asset = 2;
+  BigDecimal amount = 3;
+  optional LockVersion version = 4;
+}
+
+message Withdrawn {
+  int64 ownerId = 1;
+  string asset = 2;
+  BigDecimal amount = 3;
+  optional LockVersion version = 4;
+}

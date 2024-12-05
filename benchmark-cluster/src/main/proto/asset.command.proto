@@ -1,0 +1,10 @@
+syntax = "proto3";
+package gc.garcol.exchange.proto;
+option java_outer_classname = "AssetCommandProto";
+
+import "common.proto";
+
+message CreateAsset {
+  UUID correlationId = 1;
+  string asset = 2;
+}

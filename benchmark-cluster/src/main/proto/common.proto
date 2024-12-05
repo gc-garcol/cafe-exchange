@@ -1,0 +1,23 @@
+syntax = "proto3";
+package gc.garcol.exchange.proto;
+option java_outer_classname = "CommonProto";
+
+message UUID {
+  uint64 uuid_msb = 1; // Most Significant Bits
+  uint64 uuid_lsb = 2; // Least Significant Bits
+}
+
+message BigDecimal {
+  string value = 1;
+  int32 scale = 2;
+}
+
+message LockVersion {
+  string lockName = 1;
+  optional UUID currentLock = 2;
+  UUID newLock = 3;
+}
+
+message OptimisticLock {
+  map<string, UUID> versions = 1;
+}
