@@ -53,6 +53,7 @@ dependencies {
     implementation("io.grpc:grpc-stub:${grpcVersion}")
     compileOnly("org.apache.tomcat:annotations-api:${annotationsApiVersion}")
     implementation("com.google.protobuf:protobuf-java-util:${protocVersion}")
+    implementation("io.github.gc-garcol:cafe-wal:0.2.0")
 }
 
 tasks {

@@ -2,9 +2,9 @@ package gc.garcol.exchangecore;
 
 import gc.garcol.exchangecore.common.ClusterConstant;
 import gc.garcol.exchangecore.common.Env;
-import gc.garcol.exchangecore.exchangelog.PLogRepository;
 import gc.garcol.libcore.OneToManyRingBuffer;
 import gc.garcol.libcore.UnsafeBuffer;
+import gc.garcol.walcore.LogRepository;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
@@ -26,7 +26,7 @@ import java.nio.ByteBuffer;
 public class AgentJournal implements Agent
 {
 
-    final PLogRepository logRepository;
+    final LogRepository logRepository;
     final OneToManyRingBuffer oneToManyRingBuffer;
     final ByteBuffer commandsBuilder = ByteBuffer.allocate(Env.BATCH_INSERT_SIZE * Env.MAX_COMMAND_SIZE);
     final ByteBuffer cachedBuffer = ByteBuffer.allocate(Env.MAX_COMMAND_SIZE);
@@ -44,7 +44,7 @@ public class AgentJournal implements Agent
             commandsBuilder.putInt(0, messageCount);
             var messages = commandsBuilder.slice(0, nextIndex);
 
-            logRepository.write(messages);
+            logRepository.append(messages);
         }
         return 0;
     }

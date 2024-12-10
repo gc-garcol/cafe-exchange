@@ -1,8 +1,7 @@
 package gc.garcol.exchangecluster.configuration;
 
 import gc.garcol.exchangecore.*;
-import gc.garcol.exchangecore.exchangelog.PLogRepository;
-import gc.garcol.exchangecore.exchangelog.PSnapshotRepository;
+import gc.garcol.walcore.LogRepository;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -34,12 +33,11 @@ public class StateMachineConfiguration
 
     @Bean
     public StateMachineLoader stateMachineLoader(
-        PLogRepository logRepository,
-        PSnapshotRepository snapshotRepository,
+        LogRepository logRepository,
         StateMachineDelegate stateMachineDelegate
     )
     {
-        return new StateMachineLoader(logRepository, snapshotRepository, stateMachineDelegate);
+        return new StateMachineLoader(logRepository, stateMachineDelegate);
     }
 
     @Bean

@@ -14,7 +14,22 @@ spring:
       enabled: true
 
 management:
+  opentelemetry:
+    resource-attributes:
+      "service.name": ${server.name}
   endpoints:
     web:
       exposure:
-        include: health, prometheus
+        include: "*"
+    health:
+      show-components: always
+      show-details: always
+  otlp:
+    metrics:
+      export:
+        url: http://localhost:4318/v1/metrics
+        step: 5s
+  metrics:
+    tags:
+      service: ${server.name}
+      instance.id: ${random.long(1000,9999)}

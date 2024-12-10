@@ -5,9 +5,9 @@ import gc.garcol.exchangecore.common.ByteUtil;
 import gc.garcol.exchangecore.common.ClusterConstant;
 import gc.garcol.exchangecore.common.ClusterGlobal;
 import gc.garcol.exchangecore.common.Env;
-import gc.garcol.exchangecore.exchangelog.PLogRepository;
 import gc.garcol.exchangecore.ringbuffer.ManyToManyRingBuffer;
 import gc.garcol.libcore.OneToManyRingBuffer;
+import gc.garcol.walcore.LogRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.agrona.concurrent.AgentRunner;
 import org.agrona.concurrent.ControlledMessageHandler;
@@ -46,7 +46,7 @@ public class ExchangeClusterStateLeader implements ExchangeClusterState
             2 // journaler then AgentDomainMessageHandler
         );
         AgentDomainMessageHandler.CONSUMER_INDEX.set(1);
-        var journalerAgent = new AgentJournal(ExchangeIOC.SINGLETON.getInstance(PLogRepository.class), oneToManyRingBuffer);
+        var journalerAgent = new AgentJournal(ExchangeIOC.SINGLETON.getInstance(LogRepository.class), oneToManyRingBuffer);
 
         exchangeCluster.requestRingBuffer = new ManyToManyRingBuffer(
             manyToOneRingBuffer,
@@ -63,7 +63,7 @@ public class ExchangeClusterStateLeader implements ExchangeClusterState
         );
 
         this.journalerRunner = new AgentRunner(
-            new SleepingIdleStrategy(),
+            new SleepingIdleStrategy(10_000),
             error -> log.error("Leader journaler error", error),
             null,
             journalerAgent

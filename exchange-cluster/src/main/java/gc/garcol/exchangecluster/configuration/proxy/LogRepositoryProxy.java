@@ -1,6 +1,7 @@
 package gc.garcol.exchangecluster.configuration.proxy;
 
-import gc.garcol.exchangecore.exchangelog.PLogRepository;
+import gc.garcol.exchangecore.common.Env;
+import gc.garcol.walcore.LogRepository;
 import org.springframework.stereotype.Repository;
 
 /**
@@ -8,6 +9,10 @@ import org.springframework.stereotype.Repository;
  * @since 2024
  */
 @Repository
-public class LogRepositoryProxy extends PLogRepository
+public class LogRepositoryProxy extends LogRepository
 {
+    public LogRepositoryProxy()
+    {
+        super(Env.DATA_DIR + "/" + Env.LOG_DIR);
+    }
 }

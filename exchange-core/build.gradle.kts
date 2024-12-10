@@ -53,7 +53,8 @@ dependencies {
     implementation("org.rocksdb:rocksdbjni:${rockdbVersion}")
     implementation("redis.clients:jedis:${jedisVersion}")
 
-    implementation("io.github.gc-garcol:cafe-ringbuffer:1.2.1")
+    implementation("io.github.gc-garcol:cafe-ringbuffer:1.3.0")
+    implementation("io.github.gc-garcol:cafe-wal:0.2.0")
 }
 
 sourceSets {

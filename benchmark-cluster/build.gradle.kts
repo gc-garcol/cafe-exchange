@@ -35,8 +35,9 @@ var grpcVersion = "1.68.2"
 var protocVersion = "4.29.0"
 var grpcUtilVersion = "4.28.3"
 var swaggerUIVersion = "2.6.0"
-var prometheusVersion = "1.14.1"
 var springActuatorVersion = "3.3.4"
+var otelVersion = "1.14.1"
+var otelSdkVersion = "1.44.1"
 
 dependencies {
     implementation("org.springframework.boot:spring-boot-starter-web")
@@ -59,8 +60,8 @@ dependencies {
 
     // observability
     implementation("org.springframework.boot:spring-boot-starter-actuator")
-    runtimeOnly("io.micrometer:micrometer-registry-prometheus:${prometheusVersion}")
-    implementation("io.opentelemetry:opentelemetry-sdk-common:1.44.1")
+    runtimeOnly("io.micrometer:micrometer-registry-otlp:${otelVersion}")
+    implementation("io.opentelemetry:opentelemetry-sdk-common:${otelSdkVersion}")
 }
 
 sourceSets {

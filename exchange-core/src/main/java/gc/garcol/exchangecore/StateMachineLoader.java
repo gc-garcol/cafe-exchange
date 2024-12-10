@@ -1,8 +1,7 @@
 package gc.garcol.exchangecore;
 
 import gc.garcol.exchange.proto.ClusterPayloadProto;
-import gc.garcol.exchangecore.exchangelog.PLogRepository;
-import gc.garcol.exchangecore.exchangelog.PSnapshotRepository;
+import gc.garcol.walcore.LogRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
@@ -17,8 +16,7 @@ import java.nio.ByteBuffer;
 @RequiredArgsConstructor
 public class StateMachineLoader implements StateMachinePersistable
 {
-    private final PLogRepository logRepository;
-    private final PSnapshotRepository snapshotRepository;
+    private final LogRepository logRepository;
     private final StateMachineDelegate stateMachineDelegate;
 
     @SneakyThrows
@@ -35,18 +33,20 @@ public class StateMachineLoader implements StateMachinePersistable
     @SneakyThrows
     private void replayRemainLog()
     {
-        var snapshotMetadata = snapshotRepository.readMetadata();
-        var logMetadata = logRepository.readMetadata();
+        long latestSegment = logRepository.getLatestSegment();
+        // todo switch to latest segment
+        logRepository.switchToSegment(0);
 
-        for (long segment = snapshotMetadata.lastSnapshotSegment() + 1; segment <= logMetadata.currentSegment(); segment++)
+        long lastSyncSegment = -1;
+        ByteBuffer buffer = ByteBuffer.allocate(1 << 18);
+        for (long segment = lastSyncSegment + 1; segment <= latestSegment; segment++)
         {
-            long maxOffset = logRepository.totalIndexOffset(segment);
+            long maxOffset = logRepository.totalRecords(segment);
             var offset = 0;
             while (offset < maxOffset)
             {
-                var recordBytes = logRepository.read(segment, offset);
-
-                var buffer = ByteBuffer.wrap(recordBytes);
+                buffer.clear();
+                logRepository.read(segment, offset, buffer);
                 var totalMessage = buffer.getInt();
                 for (int commandIndex = 0; commandIndex < totalMessage; commandIndex++)
                 {
@@ -62,6 +62,5 @@ public class StateMachineLoader implements StateMachinePersistable
 
     public void snapshot()
     {
-
     }
 }
