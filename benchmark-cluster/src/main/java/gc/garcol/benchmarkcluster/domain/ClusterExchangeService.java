@@ -17,7 +17,6 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 
@@ -35,9 +34,10 @@ public class ClusterExchangeService
     @Value("${exchange.grpc.ports}")
     private int[] grpcExchangePorts;
 
-    public static final int MAX_CONNECTIONS = 64;
-
     private final Timer timer;
+
+    private final int maxItemsPerConnection = 100_000;
+    private final int idleFull = 10;
 
     public ClusterExchangeService(MeterRegistry meterRegistry)
     {
@@ -48,12 +48,11 @@ public class ClusterExchangeService
             .register(meterRegistry);
     }
 
-    private final Map<UUID, Timer.Sample>[] startTimes = new ConcurrentHashMap[MAX_CONNECTIONS];
-    private final AtomicBoolean[] isClusterConnected = new AtomicBoolean[MAX_CONNECTIONS];
-    private final AtomicInteger[] requestCount = new AtomicInteger[MAX_CONNECTIONS];
+    private Map<UUID, Timer.Sample>[] startTimes;
+    private AtomicInteger[] requestCount;
     private ClusterServiceGrpc.ClusterServiceStub clusterServiceStub;
-    private StreamObserver<ClusterPayloadProto.Request>[] requestStreams = new StreamObserver[MAX_CONNECTIONS];
-    private StreamObserver<ClusterPayloadProto.Response>[] responseStreams = new StreamObserver[MAX_CONNECTIONS];
+    private StreamObserver<ClusterPayloadProto.Request>[] requestStreams;
+    private StreamObserver<ClusterPayloadProto.Response>[] responseStreams;
 
     Function<Integer, StreamObserver<ClusterPayloadProto.Response>> createRequestStream = (index) -> new StreamObserver<>()
     {
@@ -80,10 +79,7 @@ public class ClusterExchangeService
             }
             catch (Exception e)
             {
-                Optional.ofNullable(startTimes[index].remove(correlationId))
-                    .ifPresent(sampleTimer -> {
-                        sampleTimer.stop(timer);
-                    });
+                startTimes[index].remove(correlationId);
             }
             requestCount[index].decrementAndGet();
         }
@@ -91,17 +87,15 @@ public class ClusterExchangeService
         public void onError(final Throwable t)
         {
             log.info("ClusterExchangeStub responseStream onError: {}", t.getMessage());
-            isClusterConnected[index].set(false);
         }
 
         public void onCompleted()
         {
             log.info("ClusterExchangeStub responseStream onCompleted");
-            isClusterConnected[index].set(false);
         }
     };
 
-    public Boolean request(int durationInSecond, Request request)
+    public Boolean request(int durationInSecond, int connection, Request request)
     {
         log.info("preparing...");
         if (clusterServiceStub == null)
@@ -111,49 +105,51 @@ public class ClusterExchangeService
                     .usePlaintext()
                     .build());
         }
-        for (int i = 0; i < MAX_CONNECTIONS; i++)
+
+        requestCount = new AtomicInteger[connection];
+        requestStreams = new StreamObserver[connection];
+        responseStreams = new StreamObserver[connection];
+        startTimes = new ConcurrentHashMap[connection];
+
+        for (int i = 0; i < connection; i++)
         {
             if (requestCount[i] == null)
             {
                 requestCount[i] = new AtomicInteger(0);
             }
-            if (isClusterConnected[i] == null)
-            {
-                isClusterConnected[i] = new AtomicBoolean(false);
-            }
-            if (!isClusterConnected[i].get())
-            {
-                connectCluster(i);
-            }
+            connectCluster(i);
         }
 
         log.info("preparing done...");
 
-        CompletableFuture[] futures = new CompletableFuture[MAX_CONNECTIONS];
-        IdleStrategy idleStrategy = new SleepingIdleStrategy(100);
-        for (int connectionIndex = 0; connectionIndex < MAX_CONNECTIONS; connectionIndex++)
+        CompletableFuture[] futures = new CompletableFuture[connection];
+        IdleStrategy idleStrategy = new SleepingIdleStrategy(idleFull);
+        for (int connectionIndex = 0; connectionIndex < connection; connectionIndex++)
         {
-            if (isClusterConnected[connectionIndex].get())
-            {
-                final int connectionIdx = connectionIndex;
-                futures[connectionIndex] = CompletableFuture.runAsync(() -> {
-                    long start = System.currentTimeMillis();
-                    while (start + durationInSecond * 1_000L > System.currentTimeMillis())
+            final int connectionIdx = connectionIndex;
+            futures[connectionIndex] = CompletableFuture.runAsync(() -> {
+                long start = System.currentTimeMillis();
+                while (start + durationInSecond * 1_000L > System.currentTimeMillis())
+                {
+                    if (requestCount[connectionIdx].get() > maxItemsPerConnection)
                     {
-                        if (requestCount[connectionIdx].get() > 100_000)
-                        {
-                            idleStrategy.idle();
-                            continue;
-                        }
-                        UUID correlationId = UUID.randomUUID();
-                        startTimes[connectionIdx].put(correlationId, Timer.start());
-                        send(correlationId, request, connectionIdx);
-                        requestCount[connectionIdx].incrementAndGet();
+                        idleStrategy.idle();
+                        continue;
                     }
-                });
-            }
+                    UUID correlationId = UUID.randomUUID();
+                    startTimes[connectionIdx].put(correlationId, Timer.start());
+                    send(correlationId, request, connectionIdx);
+                    requestCount[connectionIdx].incrementAndGet();
+                }
+            });
         }
         CompletableFuture.allOf(futures).join();
+
+        for (int i = 0; i < connection; i++)
+        {
+            requestStreams[i].onCompleted();
+            responseStreams[i].onCompleted();
+        }
         return true;
     }
 
@@ -167,6 +163,5 @@ public class ClusterExchangeService
         startTimes[connectionIndex] = new ConcurrentHashMap<>();
         responseStreams[connectionIndex] = createRequestStream.apply(connectionIndex);
         requestStreams[connectionIndex] = clusterServiceStub.send(responseStreams[connectionIndex]);
-        isClusterConnected[connectionIndex].set(true);
     }
 }
