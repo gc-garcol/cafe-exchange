@@ -81,9 +81,10 @@ public class ExchangeCluster
         return this.state.enqueueRequest(sender, request);
     }
 
-    public boolean enqueueResponse(UUID sender, ClusterPayloadProto.Response response)
+    public boolean enqueueResponse(UUID sender, long responseId)
     {
-        int claimIndex = responseRingBuffer.tryClaim(1, response.getSerializedSize() + Long.BYTES * 2);
+        int uuidSize = Long.BYTES * 2;
+        int claimIndex = responseRingBuffer.tryClaim(1, uuidSize * 2);
         if (claimIndex <= 0)
         {
             return false;
@@ -92,7 +93,7 @@ public class ExchangeCluster
         final var buffer = responseRingBuffer.buffer();
         buffer.putLong(claimIndex, sender.getMostSignificantBits());
         buffer.putLong(claimIndex + Long.BYTES, sender.getLeastSignificantBits());
-        buffer.putBytes(claimIndex + Long.BYTES * 2, response.toByteArray());
+        buffer.putLong(claimIndex + Long.BYTES * 2, responseId);
         responseRingBuffer.commit(claimIndex);
         return true;
     }

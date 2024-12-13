@@ -90,15 +90,24 @@ public class ExchangeClusterStateFollower implements ExchangeClusterState
     @Override
     public boolean enqueueRequest(UUID sender, ClusterPayloadProto.Request request)
     {
-        int messageType = request.getPayloadCase() == ClusterPayloadProto.Request.PayloadCase.COMMAND
-            ? ClusterConstant.COMMAND_MSG_TYPE
-            : ClusterConstant.QUERY_MSG_TYPE;
-        return exchangeCluster.requestRingBuffer
-            .publishMessage(messageType, sender, ClusterPayloadProto.CommonResponse
-                .newBuilder()
-                .setCode(StatusCode.BAD_REQUEST.code)
-                .setStatus(MessageCode.FOLLOWER_CANNOT_HANDLE_REQUEST.code)
-                .build().toByteArray());
+        var response = ClusterPayloadProto.CommonResponse
+            .newBuilder()
+            .setCode(StatusCode.BAD_REQUEST.code)
+            .setStatus(MessageCode.FOLLOWER_CANNOT_HANDLE_REQUEST.code)
+            .build();
+        long responseId = ExchangePayloadHolder.RESPONSE_COUNTER.getAndIncrement();
+        ExchangePayloadHolder.RESPONSES.put(
+            responseId,
+            ClusterPayloadProto.Response.newBuilder()
+                .setCommonResponse(response)
+                .build()
+        );
+        boolean success = exchangeCluster.enqueueResponse(sender, responseId);
+        if (!success)
+        {
+            ExchangePayloadHolder.RESPONSES.remove(responseId);
+        }
+        return false;
     }
 
     @Override

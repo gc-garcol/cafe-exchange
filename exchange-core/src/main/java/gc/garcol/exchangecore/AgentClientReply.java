@@ -1,8 +1,6 @@
 package gc.garcol.exchangecore;
 
-import gc.garcol.exchange.proto.ClusterPayloadProto;
 import lombok.RequiredArgsConstructor;
-import lombok.SneakyThrows;
 import org.agrona.MutableDirectBuffer;
 import org.agrona.concurrent.Agent;
 
@@ -34,21 +32,21 @@ public class AgentClientReply implements Agent
     public boolean consume(final int msgTypeId, final MutableDirectBuffer buffer, final int index, final int length)
     {
         NetworkClusterService networkClusterService = ExchangeIOC.SINGLETON.getInstance(NetworkClusterService.class);
-        UUID sender = new UUID(buffer.getLong(index), buffer.getLong(index + Long.BYTES));
+        UUID sender = new UUID(
+            buffer.getLong(index),
+            buffer.getLong(index + Long.BYTES)
+        );
+
+        long responseId = buffer.getLong(index + Long.BYTES * 2);
         Optional.ofNullable(networkClusterService.repliers.get(sender))
             .ifPresent(responseStream -> {
-                var response = parse(buffer, index + Long.BYTES * 2, length - Long.BYTES * 2);
+                var response = ExchangePayloadHolder.RESPONSES.remove(responseId);
+                if (response == null)
+                {
+                    return;
+                }
                 responseStream.onNext(response);
             });
         return true;
-    }
-
-    @SneakyThrows
-    private ClusterPayloadProto.Response parse(final MutableDirectBuffer buffer, final int index, final int length)
-    {
-        cachedBuffer.clear();
-        buffer.getBytes(index, cachedBuffer, length);
-        cachedBuffer.flip();
-        return ClusterPayloadProto.Response.parseFrom(cachedBuffer);
     }
 }

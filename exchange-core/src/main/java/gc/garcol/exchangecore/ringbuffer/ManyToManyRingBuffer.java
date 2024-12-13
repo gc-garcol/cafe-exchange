@@ -29,16 +29,17 @@ public class ManyToManyRingBuffer
     private final OneToManyRingBuffer oneToManyRingBuffer;
     private final ByteBuffer cachedBuffer = ByteBuffer.allocate(1 << 10);
 
-    public boolean publishMessage(int messageType, UUID sender, byte[] message)
+    public boolean publishMessage(int messageType, long requestId, UUID sender)
     {
-        int claimIndex = inboundRingBuffer.tryClaim(messageType, message.length + Long.BYTES * 2);
+        int uuidSize = Long.BYTES * 2;
+        int claimIndex = inboundRingBuffer.tryClaim(messageType, uuidSize * 2);
         if (claimIndex <= 0)
         {
             return false;
         }
         inboundRingBuffer.buffer().putLong(claimIndex, sender.getMostSignificantBits());
         inboundRingBuffer.buffer().putLong(claimIndex + Long.BYTES, sender.getLeastSignificantBits());
-        inboundRingBuffer.buffer().putBytes(claimIndex + Long.BYTES * 2, message);
+        inboundRingBuffer.buffer().putLong(claimIndex + Long.BYTES * 2, requestId);
         inboundRingBuffer.commit(claimIndex);
         return true;
     }

@@ -1,5 +1,6 @@
 package gc.garcol.exchangecore;
 
+import gc.garcol.exchange.proto.ClusterPayloadProto;
 import gc.garcol.exchangecore.common.ClusterConstant;
 import gc.garcol.exchangecore.common.Env;
 import gc.garcol.libcore.OneToManyRingBuffer;
@@ -29,7 +30,6 @@ public class AgentJournal implements Agent
     final LogRepository logRepository;
     final OneToManyRingBuffer oneToManyRingBuffer;
     final ByteBuffer commandsBuilder = ByteBuffer.allocate(Env.BATCH_INSERT_SIZE * Env.MAX_COMMAND_SIZE);
-    final ByteBuffer cachedBuffer = ByteBuffer.allocate(Env.MAX_COMMAND_SIZE);
     int messageCount;
     int nextIndex;
 
@@ -61,12 +61,12 @@ public class AgentJournal implements Agent
             if (msgTypeId == ClusterConstant.COMMAND_MSG_TYPE)
             {
                 messageCount++;
-                int messageLength = length - Long.BYTES * 2; // length - correlationId.size
-                cachedBuffer.clear();
-                buffer.getBytes(index + Long.BYTES * 2, cachedBuffer, 0, messageLength);
-                commandsBuilder.putInt(nextIndex, messageLength);
-                commandsBuilder.put(nextIndex + Integer.BYTES, cachedBuffer, 0, messageLength);
-                nextIndex = nextIndex + Integer.BYTES + messageLength;
+                long requestId = buffer.getLong(index + Long.BYTES * 2);
+                ClusterPayloadProto.Request request = ExchangePayloadHolder.REQUESTS.get(requestId);
+                byte[] requestBytes = request.toByteArray();
+                commandsBuilder.putInt(nextIndex, requestBytes.length);
+                commandsBuilder.put(nextIndex + Integer.BYTES, requestBytes);
+                nextIndex = nextIndex + Integer.BYTES + requestBytes.length;
             }
         }
         catch (Exception e)

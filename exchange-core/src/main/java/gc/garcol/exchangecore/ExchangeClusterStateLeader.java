@@ -17,6 +17,7 @@ import org.agrona.concurrent.ringbuffer.ManyToOneRingBuffer;
 
 import java.util.Objects;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
@@ -63,7 +64,7 @@ public class ExchangeClusterStateLeader implements ExchangeClusterState
         );
 
         this.journalerRunner = new AgentRunner(
-            new SleepingIdleStrategy(10_000),
+            new SleepingIdleStrategy(1_000),
             error -> log.error("Leader journaler error", error),
             null,
             journalerAgent
@@ -80,7 +81,6 @@ public class ExchangeClusterStateLeader implements ExchangeClusterState
     @Override
     public void start()
     {
-
         AgentRunner.startOnThread(requestTransformerRunner);
         AgentRunner.startOnThread(heartBeatRunner);
         AgentRunner.startOnThread(journalerRunner);
@@ -107,7 +107,14 @@ public class ExchangeClusterStateLeader implements ExchangeClusterState
         int messageType = request.getPayloadCase() == ClusterPayloadProto.Request.PayloadCase.COMMAND
             ? ClusterConstant.COMMAND_MSG_TYPE
             : ClusterConstant.QUERY_MSG_TYPE;
-        return exchangeCluster.requestRingBuffer.publishMessage(messageType, sender, request.toByteArray());
+        long requestId = ExchangePayloadHolder.REQUEST_COUNTER.getAndIncrement();
+        ExchangePayloadHolder.REQUESTS.put(requestId, request);
+        boolean success = exchangeCluster.requestRingBuffer.publishMessage(messageType, requestId, sender);
+        if (!success)
+        {
+            ExchangePayloadHolder.REQUESTS.remove(requestId);
+        }
+        return success;
     }
 
     @Override
