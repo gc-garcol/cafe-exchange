@@ -10,6 +10,8 @@ Note: This project is still under development.
 
 ## Benchmark
 
+Compared to [Binance](https://www.binance.com/en/blog/tech/how-binance-ledger-powers-your-binance-experience-5409682424466769892#:~:text=Fault%20tolerance-,Performance,-The%20following%20table), this project demonstrates superior performance in both throughput and latency.
+
 ![img.png](benchmark-deposit.png)
 
 ## Quick start
